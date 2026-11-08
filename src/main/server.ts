@@ -24,6 +24,8 @@ const MIME: Record<string, string> = {
 export class OverlayServer {
   private server: Server | null = null
   private wss: WebSocketServer | null = null
+  private heartbeat: NodeJS.Timeout | null = null
+  private readonly alive = new WeakMap<WebSocket, boolean>()
   private configProvider: (() => unknown) | null = null
   port = 0
 
@@ -53,12 +55,24 @@ export class OverlayServer {
       server.listen(port, '127.0.0.1', () => {
         this.server = server
         this.wss = new WebSocketServer({ server, path: '/ws' })
-        this.wss.on('connection', (socket: WebSocket) => {
+        this.wss.on('connection', (socket: WebSocket, req) => {
+          this.alive.set(socket, true)
+          socket.on('pong', () => this.alive.set(socket, true))
+          socket.on('close', () => {
+            this.alive.delete(socket)
+            console.log(`[overlay] 客户端断开，当前 ${this.clientCount()} 个连接`)
+          })
+          socket.on('error', () => socket.terminate())
+          const ua = String(req.headers['user-agent'] ?? '')
+          console.log(
+            `[overlay] 客户端接入，当前 ${this.clientCount()} 个连接${ua ? ` · ${ua.slice(0, 90)}` : ''}`
+          )
           socket.send(JSON.stringify({ type: 'hello', server: 'bonebowl' }))
           if (this.configProvider) {
             socket.send(JSON.stringify({ type: 'config', config: this.configProvider() }))
           }
         })
+        this.heartbeat = setInterval(() => this.checkAlive(), 15_000)
         resolvePromise()
       })
     })
@@ -132,7 +146,29 @@ export class OverlayServer {
     return count
   }
 
+  /** 定期 ping，清理刷新/断网留下的半开连接 */
+  private checkAlive(): void {
+    if (!this.wss) return
+    for (const client of this.wss.clients) {
+      if (this.alive.get(client) === false) {
+        console.log('[overlay] 清理无响应的连接')
+        client.terminate()
+        continue
+      }
+      this.alive.set(client, false)
+      try {
+        client.ping()
+      } catch {
+        client.terminate()
+      }
+    }
+  }
+
   async stop(): Promise<void> {
+    if (this.heartbeat) {
+      clearInterval(this.heartbeat)
+      this.heartbeat = null
+    }
     this.wss?.close()
     this.wss = null
     await new Promise<void>((resolvePromise) => {
