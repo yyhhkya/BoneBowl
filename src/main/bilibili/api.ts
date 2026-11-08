@@ -160,7 +160,8 @@ export async function fetchGiftCatalog(shortRoomId: number, sessdata: string): P
       room_gift_list?: { gold_list?: GiftListEntry[]; silver_list?: GiftListEntry[] }
     }
   }>(
-    `https://api.live.bilibili.com/xlive/web-room/v1/giftPanel/roomGiftList?platform=web&room_id=${room.roomId}`,
+    // platform 必须是 pc，传 web 服务端会返回空列表
+    `https://api.live.bilibili.com/xlive/web-room/v1/giftPanel/roomGiftList?platform=pc&room_id=${room.roomId}`,
     cookieHeader(sessdata, buvid)
   )
   const base = json.data?.gift_config?.base_config?.list ?? []
@@ -169,7 +170,7 @@ export async function fetchGiftCatalog(shortRoomId: number, sessdata: string): P
     ? base
     : [...(roomGifts?.gold_list ?? []), ...(roomGifts?.silver_list ?? [])]
   if (combined.length === 0) {
-    throw new Error('没有取到礼物列表，填写 SESSDATA 后重试，或手动添加礼物 ID')
+    throw new Error('没有取到礼物列表，确认直播间号正确或稍后重试，也可以手动添加礼物 ID')
   }
   return combined
     .filter((item) => Number.isFinite(item.id))
