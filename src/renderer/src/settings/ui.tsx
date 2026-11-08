@@ -56,11 +56,10 @@ export function Toggle({
         checked ? 'bg-sun' : 'bg-[#eee5d2]'
       }`}
     >
-      <motion.span
-        layout
-        transition={{ type: 'spring', stiffness: 480, damping: 32 }}
-        className="absolute top-1 left-1 block h-4 w-4 rounded-full bg-white shadow-[0_1px_2px_rgba(38,36,31,0.28)]"
-        style={{ transform: `translateX(${checked ? 16 : 0}px)` }}
+      <span
+        className={`absolute top-1 left-1 block h-4 w-4 rounded-full bg-white shadow-[0_1px_2px_rgba(38,36,31,0.28)] transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+          checked ? 'translate-x-4' : 'translate-x-0'
+        }`}
       />
     </button>
   )
