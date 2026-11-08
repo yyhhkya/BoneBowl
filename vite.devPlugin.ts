@@ -156,7 +156,17 @@ export function devApiPlugin(): Plugin {
             try {
               const body = await readBody(req)
               const patch = JSON.parse(body || '{}') as Partial<AppConfig>
-              sendJson(res, 200, writeConfig(patch))
+              const next = writeConfig(patch)
+              // 已连接的叠加层立即应用消失时长等运行参数
+              void overlayService
+                ?.then(({ server: overlay }) => {
+                  overlay.broadcast({
+                    type: 'config',
+                    config: { boneLifetimeSec: next.boneLifetimeSec }
+                  })
+                })
+                .catch(() => undefined)
+              sendJson(res, 200, next)
             } catch {
               sendJson(res, 400, { message: '配置写入失败' })
             }
