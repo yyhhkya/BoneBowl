@@ -594,6 +594,13 @@ export function SettingsPage(): React.JSX.Element {
             <StatusPill status={status} />
           </div>
 
+          {!window.bonebowl && (
+            <div className="mb-6 flex items-start gap-2 rounded-xl border border-[#f0d68f] bg-sun/20 px-4 py-2.5 text-[11.5px] leading-relaxed text-[#7a5a10]">
+              <WarningCircle size={14} className="mt-0.5 shrink-0" />
+              当前是浏览器预览：直播连接和礼物都是模拟的，不会收到真实礼物。请使用桌面应用窗口查看真实连接与最近事件。
+            </div>
+          )}
+
           <header className="grid gap-10 md:grid-cols-[minmax(0,1fr)_296px] md:items-end">
             <div>
               <p className="font-mono text-[10px] tracking-[0.3em] text-ink-soft uppercase">

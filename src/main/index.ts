@@ -140,7 +140,10 @@ function handleGift(data: SendGiftData): void {
     scale: rule.scale,
     timestamp: data.timestamp ? data.timestamp * 1000 : Date.now()
   }
-  server?.broadcast({ type: 'gift', gift: event })
+  const sent = server?.broadcast({ type: 'gift', gift: event }) ?? 0
+  console.log(
+    `[gift] 广播到 ${sent} 个叠加层连接${win ? '，并推送到设置窗口' : '，设置窗口不存在'}`
+  )
   win?.webContents.send('gift', event)
 }
 

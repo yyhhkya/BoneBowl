@@ -63,9 +63,19 @@ export class OverlayServer {
             console.log(`[overlay] 客户端断开，当前 ${this.clientCount()} 个连接`)
           })
           socket.on('error', () => socket.terminate())
+          socket.on('message', (raw) => {
+            try {
+              const payload = JSON.parse(String(raw)) as { type?: string; href?: string }
+              if (payload.type === 'ready') {
+                console.log(`[overlay] 页面就绪：${payload.href ?? '(未知地址)'}`)
+              }
+            } catch {
+              // 忽略非 JSON 消息
+            }
+          })
           const ua = String(req.headers['user-agent'] ?? '')
           console.log(
-            `[overlay] 客户端接入，当前 ${this.clientCount()} 个连接${ua ? ` · ${ua.slice(0, 90)}` : ''}`
+            `[overlay] 客户端接入，当前 ${this.clientCount()} 个连接${ua ? ` · ${ua}` : ''}`
           )
           socket.send(JSON.stringify({ type: 'hello', server: 'bonebowl' }))
           if (this.configProvider) {

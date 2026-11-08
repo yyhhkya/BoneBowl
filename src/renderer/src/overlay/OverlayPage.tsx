@@ -48,6 +48,7 @@ export function OverlayPage(): React.JSX.Element {
       }
       socket.onopen = () => {
         if (!cancelled) setSocketReady(true)
+        socket?.send(JSON.stringify({ type: 'ready', href: window.location.href }))
       }
       socket.onmessage = (event) => {
         try {
