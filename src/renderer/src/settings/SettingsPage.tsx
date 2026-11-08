@@ -396,6 +396,11 @@ export function SettingsPage(): React.JSX.Element {
     }
   }, [pushToast])
 
+  const handleQrExpire = useCallback(() => {
+    setQrState('expired')
+    setQrMessage('二维码已过期')
+  }, [])
+
   useEffect(() => {
     if (!qr) return
     let cancelled = false
@@ -1113,6 +1118,7 @@ export function SettingsPage(): React.JSX.Element {
             message={qrMessage}
             busy={qrBusy}
             onRefresh={() => void startQr()}
+            onExpire={handleQrExpire}
             onClose={() => setQr(null)}
           />
         )}

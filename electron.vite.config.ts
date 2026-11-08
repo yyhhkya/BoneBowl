@@ -16,6 +16,12 @@ export default defineConfig({
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/bili-live/, ''),
           headers: { Referer: 'https://live.bilibili.com/' }
+        },
+        '/bili-passport': {
+          target: 'https://passport.bilibili.com',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/bili-passport/, ''),
+          headers: { Referer: 'https://www.bilibili.com/' }
         }
       }
     }

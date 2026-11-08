@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowClockwise, X } from '@phosphor-icons/react'
 import type { QrLoginInfo, QrLoginState } from '../../../shared/types'
@@ -17,6 +18,7 @@ export function LoginQrModal({
   message,
   busy,
   onRefresh,
+  onExpire,
   onClose
 }: {
   qr: QrLoginInfo
@@ -24,10 +26,29 @@ export function LoginQrModal({
   message?: string
   busy: boolean
   onRefresh: () => void
+  onExpire: () => void
   onClose: () => void
 }): React.JSX.Element {
   const meta = STATE_META[state]
   const expired = state === 'expired' || state === 'error'
+  const [remaining, setRemaining] = useState(qr.expiresIn)
+
+  useEffect(() => {
+    setRemaining(qr.expiresIn)
+    const deadline = Date.now() + qr.expiresIn * 1000
+    const timer = window.setInterval(() => {
+      const left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000))
+      setRemaining(left)
+      if (left === 0) {
+        window.clearInterval(timer)
+        onExpire()
+      }
+    }, 500)
+    return () => window.clearInterval(timer)
+  }, [qr.key, qr.expiresIn, onExpire])
+
+  const minutes = Math.floor(remaining / 60)
+  const seconds = String(remaining % 60).padStart(2, '0')
   return (
     <div className="fixed inset-0 z-50 grid place-items-center px-4">
       <motion.button
@@ -80,7 +101,12 @@ export function LoginQrModal({
         </div>
 
         <p className="mt-2 text-center text-[11.5px] leading-relaxed text-ink-soft">
-          打开 B站手机客户端，扫一扫二维码，并在手机上确认登录。二维码 {qr.expiresIn} 秒内有效。
+          打开 B站手机客户端，扫一扫二维码，并在手机上确认登录。
+        </p>
+        <p className="mt-1.5 text-center font-mono text-[11px] tracking-wide text-ink-soft tabular-nums">
+          {expired || remaining === 0
+            ? '二维码已过期'
+            : `有效期 ${minutes}:${seconds}`}
         </p>
 
         {expired && (

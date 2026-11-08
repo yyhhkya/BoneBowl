@@ -50,7 +50,6 @@ let mockStatus: RoomStatus = { state: 'idle' }
 const statusListeners = new Set<(s: RoomStatus) => void>()
 const giftListeners = new Set<(g: GiftEvent) => void>()
 const configListeners = new Set<(c: AppConfig) => void>()
-let mockQrPolls = 0
 let channel: BroadcastChannel | null = null
 if (typeof BroadcastChannel !== 'undefined') {
   channel = new BroadcastChannel('bonebowl-mock')
@@ -173,21 +172,43 @@ const mockApi: BoneBowlAPI = {
     await navigator.clipboard.writeText(text)
   },
   qrLogin: async () => {
-    mockQrPolls = 0
-    await delay(300)
-    const image = await QRCode.toDataURL('https://www.bilibili.com/', {
+    const response = await fetch('/bili-passport/x/passport-login/web/qrcode/generate')
+    if (!response.ok) throw new Error(`获取二维码失败：HTTP ${response.status}`)
+    const json = (await response.json()) as {
+      code?: number
+      data?: { url?: string; qrcode_key?: string }
+    }
+    const url = json.data?.url
+    const key = json.data?.qrcode_key
+    if (json.code !== 0 || !url || !key) {
+      throw new Error('获取二维码失败，请重启 npm run dev:web 让代理生效')
+    }
+    const image = await QRCode.toDataURL(url, {
       margin: 1,
       width: 360,
       color: { dark: '#2f2a22', light: '#fffdf7' }
     })
-    return { key: 'mock-qr-key', image, expiresIn: 180 }
+    return { key, image, expiresIn: 180 }
   },
-  qrPoll: async (): Promise<QrLoginPoll> => {
-    mockQrPolls += 1
-    await delay(300)
-    // 预览没有真实扫码通道，保持等待直到二维码过期
-    if (mockQrPolls > 90) return { state: 'expired', message: '二维码已过期' }
-    return { state: 'waiting', message: '等待扫码' }
+  qrPoll: async (key: string): Promise<QrLoginPoll> => {
+    const response = await fetch(
+      `/bili-passport/x/passport-login/web/qrcode/poll?qrcode_key=${encodeURIComponent(key)}`
+    )
+    if (!response.ok) return { state: 'error', message: `轮询失败：HTTP ${response.status}` }
+    const json = (await response.json()) as {
+      code?: number
+      data?: { code?: number; message?: string }
+    }
+    if (json.code !== 0) return { state: 'error', message: '轮询失败，请刷新二维码' }
+    const status = json.data?.code
+    if (status === 86101) return { state: 'waiting', message: '等待扫码' }
+    if (status === 86090) return { state: 'scanned', message: '已扫码，在手机上确认' }
+    if (status === 86038) return { state: 'expired', message: '二维码已过期' }
+    if (status !== 0) return { state: 'error', message: json.data?.message || '未知状态' }
+    // 浏览器读不到 HttpOnly 的 SESSDATA，预览登录成功后用模拟会话
+    mockConfig.sessdata = 'mock-SESSDATA'
+    persistMockConfig()
+    return { state: 'success', sessdata: 'mock-SESSDATA' }
   },
   verifyLogin: async (): Promise<LoginCheck> => {
     if (!mockConfig.sessdata.trim()) return { state: 'none', message: '还没有登录' }
