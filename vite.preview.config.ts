@@ -1,13 +1,13 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import { biliNavPlugin } from './vite.biliPlugin'
+import { devApiPlugin } from './vite.devPlugin'
 
 // 仅供浏览器预览设置页与叠加页，不参与 Electron 打包
 export default defineConfig({
   root: 'src/renderer',
   base: './',
-  plugins: [react(), tailwindcss(), biliNavPlugin()],
+  plugins: [react(), tailwindcss(), devApiPlugin()],
   server: {
     port: 5199,
     strictPort: true,

@@ -18,34 +18,7 @@ function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T
 }
 
-const MOCK_CONFIG_KEY = 'bonebowl:mock-config'
-
-function loadMockConfig(): AppConfig {
-  const fallback: AppConfig = { ...clone(DEFAULT_CONFIG), roomId: null, gifts: [] }
-  try {
-    const raw = window.localStorage.getItem(MOCK_CONFIG_KEY)
-    if (!raw) return fallback
-    const parsed = JSON.parse(raw) as Partial<AppConfig>
-    return {
-      ...fallback,
-      ...parsed,
-      roomId: typeof parsed.roomId === 'number' && parsed.roomId > 0 ? parsed.roomId : null,
-      gifts: Array.isArray(parsed.gifts) ? parsed.gifts : []
-    }
-  } catch {
-    return fallback
-  }
-}
-
-function persistMockConfig(): void {
-  try {
-    window.localStorage.setItem(MOCK_CONFIG_KEY, JSON.stringify(mockConfig))
-  } catch {
-    // 存储不可用时只保留在内存里
-  }
-}
-
-let mockConfig: AppConfig = loadMockConfig()
+let mockConfig: AppConfig = { ...clone(DEFAULT_CONFIG), roomId: null, gifts: [] }
 let mockStatus: RoomStatus = { state: 'idle' }
 const statusListeners = new Set<(s: RoomStatus) => void>()
 const giftListeners = new Set<(g: GiftEvent) => void>()
@@ -53,6 +26,18 @@ const configListeners = new Set<(c: AppConfig) => void>()
 let channel: BroadcastChannel | null = null
 if (typeof BroadcastChannel !== 'undefined') {
   channel = new BroadcastChannel('bonebowl-mock')
+}
+
+async function saveMockConfig(patch: Partial<AppConfig>): Promise<AppConfig> {
+  const response = await fetch('/dev-config', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch)
+  })
+  if (!response.ok) throw new Error('保存配置失败，请重启 dev 服务后重试')
+  mockConfig = (await response.json()) as AppConfig
+  configListeners.forEach((cb) => cb(clone(mockConfig)))
+  return clone(mockConfig)
 }
 
 function emitStatus(status: RoomStatus, wait = 0): void {
@@ -96,20 +81,23 @@ function emitGift(size: BoneSize = 'medium'): void {
 }
 
 const mockApi: BoneBowlAPI = {
-  getConfig: async () => clone(mockConfig),
-  saveConfig: async (patch) => {
-    mockConfig = { ...mockConfig, ...patch } as AppConfig
-    persistMockConfig()
-    configListeners.forEach((cb) => cb(clone(mockConfig)))
+  getConfig: async () => {
+    const response = await fetch('/dev-config')
+    if (!response.ok) throw new Error('读取配置失败，请重启 dev 服务后重试')
+    mockConfig = (await response.json()) as AppConfig
     return clone(mockConfig)
   },
+  saveConfig: async (patch) => saveMockConfig(patch),
   connect: async (opts) => {
     const roomId = opts?.roomId ?? mockConfig.roomId
     if (!roomId) throw new Error('先填写直播间号')
     const sessdata = (opts?.sessdata ?? mockConfig.sessdata).trim()
     if (!sessdata) throw new Error('连接直播间需要先扫码登录 B站账号')
-    mockConfig.roomId = roomId
-    persistMockConfig()
+    try {
+      await saveMockConfig({ roomId })
+    } catch {
+      // 持久化失败不阻断预览里的连接流程
+    }
     emitStatus({ state: 'connecting', roomId })
     await delay(900)
     emitStatus({ state: 'connected', roomId, realRoomId: roomId })
@@ -207,7 +195,11 @@ const mockApi: BoneBowlAPI = {
     const sessdata = (json.sessdata ?? '').trim()
     if (!sessdata) return { state: 'error', message: '登录成功，但没有取到 SESSDATA' }
     mockConfig.sessdata = sessdata
-    persistMockConfig()
+    try {
+      await saveMockConfig({ sessdata })
+    } catch {
+      // 配置写入失败不影响本次登录结果
+    }
     const nav = await fetch(`/bili-nav?sessdata=${encodeURIComponent(sessdata)}`)
       .then((res) => res.json())
       .catch(() => null)

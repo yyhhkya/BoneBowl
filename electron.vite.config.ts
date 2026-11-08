@@ -1,14 +1,14 @@
 import { defineConfig } from 'electron-vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import { biliNavPlugin } from './vite.biliPlugin'
+import { devApiPlugin } from './vite.devPlugin'
 
 export default defineConfig({
   main: {},
   preload: {},
   renderer: {
     base: './',
-    plugins: [react(), tailwindcss(), biliNavPlugin()],
+    plugins: [react(), tailwindcss(), devApiPlugin()],
     server: {
       proxy: {
         // 浏览器里直接打开 5173 时也能拉真实礼物列表

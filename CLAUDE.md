@@ -38,7 +38,7 @@ docs/              README 截图
 ## 关键约束
 
 - **B站协议**：`getDanmuInfo` 需要 Wbi 签名与 Cookie 中的 `buvid3`；信息流是 WebSocket 二进制封包（protover 2/3，zlib/brotli），认证 op=7、心跳 op=2、消息 op=5。必须登录（配置里有 `sessdata`）才允许连接直播间，自动连接同样受此限制。
-- **扫码登录**：`passport.bilibili.com/x/passport-login/web/qrcode/generate` 生成，poll 返回 0/86101/86090/86038。成功后从 Set-Cookie 取 SESSDATA，主进程保存并清理登录 UID 缓存。设置页只提供扫码登录，不保留手动粘贴输入框。登录后必须用 `x/web-interface/nav` 在线校验 `isLogin`：设置页加载、扫码成功、连接直播间前都会校验；校验为失效时拒绝连接并提示重新扫码。二维码有效期 180 秒，弹窗内有倒计时并在归零时标记过期。浏览器预览通过 `/bili-passport` 代理申请真实二维码，`/bili-poll`（`vite.biliPlugin.ts`）在本地 dev 服务端轮询并读取 Set-Cookie 拿到真实 SESSDATA（浏览器读不到 HttpOnly Cookie），`/bili-nav` 代请求 nav 显示真实昵称。
+- **扫码登录**：`passport.bilibili.com/x/passport-login/web/qrcode/generate` 生成，poll 返回 0/86101/86090/86038。成功后从 Set-Cookie 取 SESSDATA，主进程保存并清理登录 UID 缓存。设置页只提供扫码登录，不保留手动粘贴输入框。登录后必须用 `x/web-interface/nav` 在线校验 `isLogin`：设置页加载、扫码成功、连接直播间前都会校验；校验为失效时拒绝连接并提示重新扫码。二维码有效期 180 秒，弹窗内有倒计时并在归零时标记过期。浏览器预览通过 `/bili-passport` 代理申请真实二维码，`/bili-poll`（`vite.devPlugin.ts`）在本地 dev 服务端轮询并读取 Set-Cookie 拿到真实 SESSDATA（浏览器读不到 HttpOnly Cookie），`/bili-nav` 代请求 nav 显示真实昵称。
 - **礼物事件**：`SEND_GIFT`，按 `tid` 去重；映射规则见 `AppConfig.gifts`，**按礼物名称匹配**（`data.giftName` 去空白后与规则 `name` 比较），同名的多个 B站礼物 ID 视为同一礼物，列表与映射都按名称去重；`giftId` 仅保留在配置里，不参与匹配；单条最多 40 根骨头。设置页「选择礼物」弹窗优先调用 `giftPanel/giftConfig?platform=pc`（完整礼物库，约 1000 条），为空时退回 `giftPanel/roomGiftList`（`platform` 必须传 `pc`，传 `web` 返回空列表）；礼物图标取 `webp`/`img_basic`，渲染时加 `referrerPolicy="no-referrer"`，否则图床按 Referer 返回 403；接口价格单位是金瓜子，界面按 1 电池 = 100 金瓜子换算展示。浏览器预览通过 `vite.preview.config.ts` 的 `/bili-live` 代理直连接口，代理未生效（例如改了配置没重启 dev server）时弹窗直接报错，不再回退到示例数据。
 - **叠加层**：透明背景，1920×1080 设计坐标缩放适配；骨头用系统 🦴 字形生成贴图并裁剪；碗的碰撞体是“外壁 + 碗口 + 内壁”的闭合截面；碗前壁半透明（约 58%）；不加隐形挡墙；骨头数量上限 100，可设置消失时长（0 = 永不）。
 - **开发模式判断**：`process.env.ELECTRON_RENDERER_URL` 存在即 Vite 开发；主进程用 `app.isPackaged`。
@@ -47,7 +47,7 @@ docs/              README 截图
 
 - 渲染层 UI 保持奶油白底 + 亮黄强调（`--color-sun`）、深棕文字、圆角胶囊按钮；不使用 emoji 作为 UI 图标（骨头贴图除外）。
 - 主进程与渲染进程之间只通过 `src/shared/types.ts` 中的 IPC API 通信；新增字段必须同时更新 `AppConfig`、`normalize()`、模拟 API 与设置页。
-- 配置文件只落本机 userData，不上传。
+- 配置文件只落本机 userData（`%APPDATA%\bonebowl\config.json`），不上传；浏览器预览通过 `vite.devPlugin.ts` 的 `/dev-config` 读写同一份文件，模拟 API 不再使用 localStorage。Electron 应用运行时会把配置缓存在内存里，两边同时改可能互相覆盖，改预览配置前先关掉应用。
 - 每次完成一个任务后执行 `git add -A && git commit`，**不要推送**（用户明确要求）。
 - 测试优先用 `npm run dev:web` 的模拟数据；涉及真实接口时先用临时脚本验证端点，再在应用里跑。
 - 打最终 exe 用 `npm run dist`，产物在 `release/`；打包后启动一次确认 `http://127.0.0.1:17800/overlay` 返回 200。

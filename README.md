@@ -53,7 +53,7 @@ node node_modules/electron/install.js
 6. 直播期间保持应用运行；最小化不影响叠加层，关闭应用会断开连接与本地服务。
 
 
-配置保存在 Electron 的 userData 目录（`config.json`），只在本机。直播间号、礼物映射、叠加层参数等改动都会自动保存，不需要手动点保存；开发预览（`npm run dev:web`）会把模拟配置存在浏览器 localStorage 里，刷新后仍然保留。
+配置保存在 Electron 的 userData 目录（`config.json`），只在本机。直播间号、礼物映射、叠加层参数等改动都会自动保存，不需要手动点保存；开发预览（`npm run dev:web`）通过本地 dev 接口读写同一份 `config.json`，刷新或重启后都会保留。
 
 ## 目录
 
