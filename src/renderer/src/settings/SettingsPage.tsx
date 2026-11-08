@@ -265,8 +265,11 @@ export function SettingsPage(): React.JSX.Element {
 
   const openPicker = useCallback(() => {
     if (!activeRoomId) {
-      setRoomError('选择礼物前先填写直播间号')
+      setRoomError('先填写直播间号，再选择礼物')
       pushToast('先填写直播间号', 'error')
+      const input = document.getElementById('room-id') as HTMLInputElement | null
+      input?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      window.setTimeout(() => input?.focus({ preventScroll: true }), 320)
       return
     }
     setPickerOpen(true)
@@ -664,7 +667,7 @@ export function SettingsPage(): React.JSX.Element {
               description="礼物 ID 决定触发哪一条规则，数量是每份礼物掉落的骨头数。连击会叠加上限 40 根。"
               aside={
                 <div className="flex items-center gap-2">
-                  <Button variant="ghost" onClick={openPicker} disabled={!activeRoomId}>
+                  <Button variant="ghost" onClick={openPicker}>
                     <Gift size={15} />
                     选择礼物
                   </Button>
@@ -693,7 +696,7 @@ export function SettingsPage(): React.JSX.Element {
                     从直播间礼物面板里点选，或手动添加一条。未映射的礼物不会掉落骨头。
                   </p>
                   <div className="mt-5 flex gap-2">
-                    <Button variant="ghost" onClick={openPicker} disabled={!activeRoomId}>
+                    <Button variant="ghost" onClick={openPicker}>
                       <Gift size={15} />
                       选择礼物
                     </Button>

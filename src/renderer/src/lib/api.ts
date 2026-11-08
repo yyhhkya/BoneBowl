@@ -20,11 +20,7 @@ function clone<T>(value: T): T {
 let mockConfig: AppConfig = {
   ...clone(DEFAULT_CONFIG),
   roomId: null,
-  gifts: [
-    { id: 'seed-bloom', giftId: 31036, name: '小花花', bones: 1, size: 'small', enabled: true },
-    { id: 'seed-battery', giftId: 31164, name: '电池', bones: 3, size: 'medium', enabled: true },
-    { id: 'seed-heart', giftId: 30064, name: '小心心', bones: 5, size: 'large', enabled: true }
-  ]
+  gifts: []
 }
 let mockStatus: RoomStatus = { state: 'idle' }
 const statusListeners = new Set<(s: RoomStatus) => void>()
