@@ -89,6 +89,8 @@ export interface BoneBowlAPI {
   openOverlay: () => Promise<void>
   openExternal: (url: string) => Promise<void>
   copyText: (text: string) => Promise<void>
+  minimizeWindow: () => void
+  closeWindow: () => void
   qrLogin: () => Promise<QrLoginInfo>
   qrPoll: (key: string) => Promise<QrLoginPoll>
   verifyLogin: () => Promise<LoginCheck>

@@ -130,6 +130,15 @@
     outline-offset: 2px;
   }
 
+  .app-drag {
+    -webkit-app-region: drag;
+    user-select: none;
+  }
+
+  .app-no-drag {
+    -webkit-app-region: no-drag;
+  }
+
   .range-honey {
     -webkit-appearance: none;
     appearance: none;

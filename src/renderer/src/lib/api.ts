@@ -233,6 +233,8 @@ const mockApi: BoneBowlAPI = {
       if (!ok) throw new Error('copy failed')
     }
   },
+  minimizeWindow: () => undefined,
+  closeWindow: () => undefined,
   qrLogin: async () => {
     const response = await fetch('/bili-passport/x/passport-login/web/qrcode/generate')
     if (!response.ok) throw new Error(`获取二维码失败：HTTP ${response.status}`)

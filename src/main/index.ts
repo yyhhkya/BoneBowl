@@ -46,8 +46,10 @@ function createWindow(): void {
   win = new BrowserWindow({
     width: 1280,
     height: 860,
-    minWidth: 1060,
-    minHeight: 700,
+    resizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    frame: false,
     show: false,
     backgroundColor: '#f4f1ea',
     autoHideMenuBar: true,
@@ -243,6 +245,10 @@ function registerIpc(): void {
   ipcMain.handle('clipboard:write', (_event, text: string) => {
     clipboard.writeText(String(text ?? ''))
   })
+
+  ipcMain.on('window:minimize', () => win?.minimize())
+
+  ipcMain.on('window:close', () => win?.close())
 
   ipcMain.handle('login:qrcode', () => generateQrLogin())
 

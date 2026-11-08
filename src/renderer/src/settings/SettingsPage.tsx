@@ -474,7 +474,7 @@ export function SettingsPage(): React.JSX.Element {
 
   if (loadError) {
     return (
-      <div className="grid min-h-[100dvh] place-items-center px-6">
+      <div className="grid min-h-[calc(100dvh-2.75rem)] place-items-center px-6">
         <div className="max-w-md text-center">
           <WarningCircle size={28} className="mx-auto text-clay" />
           <h1 className="mt-4 text-2xl tracking-tight">配置读取失败</h1>
@@ -519,10 +519,10 @@ export function SettingsPage(): React.JSX.Element {
             : '连接直播间必须登录，用 B站手机客户端扫码即可。'
 
   return (
-    <div className="relative min-h-[100dvh]">
+    <div className="relative min-h-[calc(100dvh-2.75rem)]">
       <Grain />
-      <div className="mx-auto grid min-h-[100dvh] w-full max-w-[1600px] lg:grid-cols-[264px_minmax(0,1fr)]">
-        <aside className="sticky top-0 hidden h-[100dvh] flex-col border-r border-line bg-white/55 px-7 py-8 lg:flex">
+      <div className="mx-auto grid min-h-[calc(100dvh-2.75rem)] w-full max-w-[1600px] lg:grid-cols-[264px_minmax(0,1fr)]">
+        <aside className="sticky top-11 hidden h-[calc(100dvh-2.75rem)] flex-col border-r border-line bg-white/55 px-7 py-8 lg:flex">
           <div className="flex items-center gap-3">
             <span className="grid h-9 w-9 place-items-center rounded-xl border border-line bg-surface text-ember">
               <BoneMark className="h-5 w-5 -rotate-12" />
@@ -584,16 +584,6 @@ export function SettingsPage(): React.JSX.Element {
         </aside>
 
         <main className="min-w-0 px-5 pb-24 pt-6 md:px-10 lg:px-14 lg:pt-10 xl:px-20">
-          <div className="mb-8 flex items-center justify-between lg:hidden">
-            <div className="flex items-center gap-2.5">
-              <span className="grid h-8 w-8 place-items-center rounded-lg border border-line bg-surface text-ember">
-                <BoneMark className="h-4 w-4 -rotate-12" />
-              </span>
-              <span className="text-[14px] font-medium tracking-tight">BoneBowl</span>
-            </div>
-            <StatusPill status={status} />
-          </div>
-
           {!window.bonebowl && (
             <div className="mb-6 flex items-start gap-2 rounded-xl border border-[#f0d68f] bg-sun/20 px-4 py-2.5 text-[11.5px] leading-relaxed text-[#7a5a10]">
               <WarningCircle size={14} className="mt-0.5 shrink-0" />
@@ -1214,7 +1204,11 @@ function StagePreview({
 
 function LoadingShell(): React.JSX.Element {
   return (
-    <div className="min-h-[100dvh] px-6 py-10 md:px-16" aria-busy="true" aria-label="正在读取配置">
+    <div
+      className="min-h-[calc(100dvh-2.75rem)] px-6 py-10 md:px-16"
+      aria-busy="true"
+      aria-label="正在读取配置"
+    >
       <div className="mx-auto max-w-[1200px]">
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 animate-pulse rounded-xl bg-[#f6efdd]" />

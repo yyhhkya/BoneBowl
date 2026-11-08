@@ -206,7 +206,7 @@ export function SectionHeading({
   )
 }
 
-const STATUS_META: Record<
+export const STATUS_META: Record<
   RoomStatus['state'],
   { label: string; dot: string; text: string; ring: string }
 > = {

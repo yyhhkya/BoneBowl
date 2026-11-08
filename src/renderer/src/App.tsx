@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { SettingsPage } from './settings/SettingsPage'
+import { TitleBar } from './settings/TitleBar'
 import { OverlayPage } from './overlay/OverlayPage'
 
 export function App(): React.JSX.Element {
@@ -15,5 +16,14 @@ export function App(): React.JSX.Element {
     }
   }, [isOverlay])
 
-  return isOverlay ? <OverlayPage /> : <SettingsPage />
+  return isOverlay ? (
+    <OverlayPage />
+  ) : (
+    <div className="flex min-h-[100dvh] flex-col">
+      <TitleBar />
+      <div className="min-w-0 flex-1">
+        <SettingsPage />
+      </div>
+    </div>
+  )
 }
