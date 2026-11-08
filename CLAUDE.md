@@ -48,7 +48,7 @@ docs/              README 截图
 
 - 渲染层 UI 保持奶油白底 + 亮黄强调（`--color-sun`）、深棕文字、圆角胶囊按钮；不使用 emoji 作为 UI 图标（骨头贴图除外）。
 - 主进程与渲染进程之间只通过 `src/shared/types.ts` 中的 IPC API 通信；新增字段必须同时更新 `AppConfig`、`normalize()`、模拟 API 与设置页。
-- 配置文件只落本机 userData（`%APPDATA%\bonebowl\config.json`），不上传；浏览器预览通过 `vite.devPlugin.ts` 的 `/dev-config` 读写同一份文件，模拟 API 不再使用 localStorage。Electron 应用运行时会把配置缓存在内存里，两边同时改可能互相覆盖，改预览配置前先关掉应用。
+- 配置文件只落本机 userData（`%APPDATA%\bonebowl\config.json`），不上传；浏览器预览通过 `vite.devPlugin.ts` 的 `/dev-config` 读写同一份文件，模拟 API 不再使用 localStorage。每次写入前会把上一版备份到 `config.json.bak`；测试时用环境变量 `BONEBOWL_CONFIG_PATH` 指向临时文件，**不要覆盖真实配置**。Electron 应用运行时会把配置缓存在内存里，两边同时改可能互相覆盖，改预览配置前先关掉应用。
 - 每次完成一个任务后执行 `git add -A && git commit`，**不要推送**（用户明确要求）。
 - 测试优先用 `npm run dev:web` 的模拟数据；涉及真实接口时先用临时脚本验证端点，再在应用里跑。
 - 打最终 exe 用 `npm run dist`，产物在 `release/`；打包后启动一次确认 `http://127.0.0.1:17800/overlay` 返回 200。

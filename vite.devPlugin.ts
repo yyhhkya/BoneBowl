@@ -3,7 +3,7 @@ import type { ServerResponse } from 'node:http'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import type { Plugin, ViteDevServer } from 'vite'
-import { normalizeConfig } from './src/shared/config'
+import { backupConfigFile, normalizeConfig, resolveConfigPath } from './src/shared/config'
 import { DEFAULT_CONFIG, type AppConfig, type GiftEvent } from './src/shared/types'
 import { refreshLoginIfNeeded } from './src/main/bilibili/refresh'
 import { OverlayServer } from './src/main/server'
@@ -32,7 +32,7 @@ function configFilePath(): string {
       : process.platform === 'darwin'
         ? join(home, 'Library', 'Application Support')
         : (process.env.XDG_CONFIG_HOME ?? join(home, '.config'))
-  return join(base, 'bonebowl', 'config.json')
+  return resolveConfigPath(join(base, 'bonebowl', 'config.json'))
 }
 
 function readConfig(): AppConfig {
@@ -51,6 +51,7 @@ function writeConfig(patch: Partial<AppConfig>): AppConfig {
   const next = normalizeConfig({ ...readConfig(), ...patch })
   const file = configFilePath()
   mkdirSync(dirname(file), { recursive: true })
+  backupConfigFile(file)
   writeFileSync(file, JSON.stringify(next, null, 2), 'utf8')
   return next
 }

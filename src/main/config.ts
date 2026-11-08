@@ -1,13 +1,13 @@
 import { app } from 'electron'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import { normalizeConfig } from '../shared/config'
+import { backupConfigFile, normalizeConfig, resolveConfigPath } from '../shared/config'
 import { DEFAULT_CONFIG, type AppConfig } from '../shared/types'
 
 let cached: AppConfig | null = null
 
 function configPath(): string {
-  return join(app.getPath('userData'), 'config.json')
+  return resolveConfigPath(join(app.getPath('userData'), 'config.json'))
 }
 
 export function loadConfig(): AppConfig {
@@ -29,6 +29,7 @@ export function saveConfig(patch: Partial<AppConfig>): AppConfig {
   cached = next
   const file = configPath()
   mkdirSync(dirname(file), { recursive: true })
+  backupConfigFile(file)
   writeFileSync(file, JSON.stringify(next, null, 2), 'utf8')
   return next
 }

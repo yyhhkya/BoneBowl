@@ -1,4 +1,21 @@
+import { copyFileSync, existsSync } from 'node:fs'
 import { DEFAULT_CONFIG, type AppConfig } from './types'
+
+/** 允许用环境变量把配置指到临时文件，测试时不要动真实配置 */
+export function resolveConfigPath(defaultPath: string): string {
+  const override = process.env.BONEBOWL_CONFIG_PATH?.trim()
+  return override || defaultPath
+}
+
+/** 写配置前保留上一版，误操作时可以手工恢复 config.json.bak */
+export function backupConfigFile(file: string): void {
+  try {
+    if (!existsSync(file)) return
+    copyFileSync(file, `${file}.bak`)
+  } catch (error) {
+    console.warn('[config] 备份失败', error)
+  }
+}
 
 const LEGACY_SIZE_SCALE: Record<string, number> = { small: 0.76, medium: 1, large: 1.34 }
 
