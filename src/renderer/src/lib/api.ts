@@ -19,7 +19,7 @@ function clone<T>(value: T): T {
 
 let mockConfig: AppConfig = {
   ...clone(DEFAULT_CONFIG),
-  roomId: 30866874,
+  roomId: null,
   gifts: [
     { id: 'seed-bloom', giftId: 31036, name: '小花花', bones: 1, size: 'small', enabled: true },
     { id: 'seed-battery', giftId: 31164, name: '电池', bones: 3, size: 'medium', enabled: true },
@@ -96,7 +96,8 @@ const mockApi: BoneBowlAPI = {
     return clone(mockConfig)
   },
   connect: async (opts) => {
-    const roomId = opts?.roomId ?? mockConfig.roomId ?? 30866874
+    const roomId = opts?.roomId ?? mockConfig.roomId
+    if (!roomId) throw new Error('先填写直播间号')
     mockConfig.roomId = roomId
     emitStatus({ state: 'connecting', roomId })
     await delay(900)
