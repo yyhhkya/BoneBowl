@@ -1,0 +1,176 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Geist Variable', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  --font-mono: 'Geist Mono Variable', 'SFMono-Regular', Consolas, monospace;
+
+  --color-paper: #fdfbf4;
+  --color-surface: #ffffff;
+  --color-ink: #2f2a22;
+  --color-ink-soft: #8b8173;
+  --color-line: #f0e7d6;
+  --color-ember: #d99a1f;
+  --color-sun: #ffd84d;
+  --color-ember-dark: #c4860f;
+  --color-moss: #6f9150;
+  --color-clay: #b0523a;
+
+  --animate-breathe: breathe 3.2s ease-in-out infinite;
+  --animate-rise: rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-float: float 6s ease-in-out infinite;
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0) rotate(var(--bone-rotate, 0deg));
+    }
+    50% {
+      transform: translateY(-6px) rotate(var(--bone-rotate, 0deg));
+    }
+  }
+
+  @keyframes breathe {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.45;
+      transform: scale(0.82);
+    }
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-ember) 22%, transparent);
+  }
+
+  html.page-overlay,
+  html.page-overlay body,
+  html.page-overlay #root {
+    background: transparent !important;
+    overflow: hidden;
+  }
+
+  html.page-settings body {
+    background-color: var(--color-paper);
+    background-image: radial-gradient(circle, #f3e9d5 1px, transparent 1.4px);
+    background-size: 24px 24px;
+    background-attachment: fixed;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #cfc8ba transparent;
+  }
+}
+
+@layer components {
+  .field-input {
+    width: 100%;
+    border-radius: 0.75rem;
+    border: 1px solid var(--color-line);
+    background: color-mix(in srgb, var(--color-surface) 70%, transparent);
+    padding: 0.65rem 0.85rem;
+    font-size: 0.875rem;
+    color: var(--color-ink);
+    outline: none;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      background 0.2s ease;
+  }
+
+  .field-input::placeholder {
+    color: color-mix(in srgb, var(--color-ink-soft) 60%, transparent);
+  }
+
+  .field-input:focus {
+    border-color: color-mix(in srgb, var(--color-ember) 55%, transparent);
+    background: var(--color-surface);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-ember) 14%, transparent);
+  }
+
+  .field-input:disabled {
+    opacity: 0.55;
+  }
+
+  .focus-ring:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--color-ember) 65%, transparent);
+    outline-offset: 2px;
+  }
+
+  .range-honey {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 8px;
+    border-radius: 999px;
+    background: #f4ecdb;
+    outline: none;
+  }
+
+  .range-honey::-webkit-slider-runnable-track {
+    height: 8px;
+    border-radius: 999px;
+    background: #f4ecdb;
+  }
+
+  .range-honey::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    margin-top: -6px;
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background: #fffdf7;
+    border: 3px solid var(--color-ember);
+    box-shadow: 0 2px 6px rgba(217, 154, 31, 0.3);
+    cursor: pointer;
+  }
+
+  .range-honey::-moz-range-track {
+    height: 8px;
+    border-radius: 999px;
+    background: #f4ecdb;
+  }
+
+  .range-honey::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    background: #fffdf7;
+    border: 3px solid var(--color-ember);
+    cursor: pointer;
+  }
+}
