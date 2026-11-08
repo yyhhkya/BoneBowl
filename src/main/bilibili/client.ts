@@ -185,12 +185,46 @@ export class LiveClient extends EventEmitter {
   private handlePayload(payload: unknown): void {
     if (!payload || typeof payload !== 'object') return
     const cmd = (payload as { cmd?: string }).cmd ?? ''
+    if (cmd && this.messageCount < 5) {
+      this.messageCount += 1
+      console.log(`[danmu] 收到消息类型：${cmd}`)
+    }
     if (cmd === 'SEND_GIFT') {
       const data = (payload as { data?: SendGiftData }).data
       if (!data) return
-      if (this.isDuplicate(data)) return
+      if (this.isDuplicate(data)) {
+        console.log(`[gift] 重复礼物已忽略 tid=${data.tid ?? '-'}`)
+        return
+      }
+      const extra = data as unknown as { price?: number; coin_type?: string }
+      console.log(
+        `[gift] SEND_GIFT ${JSON.stringify({
+          giftId: data.giftId,
+          giftName: data.giftName,
+          num: data.num,
+          price: extra.price,
+          coinType: extra.coin_type,
+          uname: data.uname,
+          tid: data.tid
+        })}`
+      )
       this.attempts = 0
       this.emit('gift', data)
+      return
+    }
+    if (cmd === 'COMBO_SEND') {
+      const data = (payload as {
+        data?: { gift_id?: number; gift_name?: string; combo_num?: number; num?: number }
+      }).data
+      if (data) {
+        console.log(
+          `[gift] COMBO_SEND ${JSON.stringify({
+            giftId: data.gift_id,
+            giftName: data.gift_name,
+            comboNum: data.combo_num ?? data.num
+          })}`
+        )
+      }
       return
     }
     const code = (payload as { code?: number }).code
@@ -207,6 +241,7 @@ export class LiveClient extends EventEmitter {
   }
 
   private lastRealRoomId = 0
+  private messageCount = 0
 
   private isDuplicate(data: SendGiftData): boolean {
     const key = data.tid || data.rnd || `${data.uid}-${data.giftId}-${data.timestamp}-${data.num}`

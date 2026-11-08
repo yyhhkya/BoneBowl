@@ -117,11 +117,19 @@ async function startClient(opts: { roomId?: number | null; sessdata?: string } =
 function handleGift(data: SendGiftData): void {
   const config = loadConfig()
   const giftName = (data.giftName || '').trim()
-  if (!giftName) return
+  if (!giftName) {
+    console.log('[gift] 礼物名称为空，无法匹配')
+    return
+  }
   // B站同一礼物存在多个 ID，映射只按礼物名称匹配
   const rule = config.gifts.find((g) => g.enabled && g.name.trim() === giftName)
-  if (!rule) return
+  if (!rule) {
+    const configured = config.gifts.map((g) => `${g.name || '(空)'}${g.enabled ? '' : '(停用)'}`).join('、')
+    console.log(`[gift] 未匹配礼物「${giftName}」，已配置：${configured || '无'}`)
+    return
+  }
   const count = Math.min(40, Math.max(1, Math.round(rule.bones * Math.max(1, data.num || 1))))
+  console.log(`[gift] 匹配「${rule.name}」，掉落 ${count} 根骨头`)
   const event: GiftEvent = {
     giftId: data.giftId,
     giftName: data.giftName || rule.name,
