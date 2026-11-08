@@ -158,7 +158,7 @@ export function Field({
   action?: React.ReactNode
 }): React.JSX.Element {
   return (
-    <div className={`flex flex-col gap-2 ${className}`}>
+    <div className={`flex min-w-0 flex-col gap-2 ${className}`}>
       <div className="flex min-h-6 items-center justify-between gap-3">
         <label htmlFor={htmlFor} className="text-[13px] font-medium tracking-tight text-ink">
           {label}
@@ -176,32 +176,23 @@ export function Field({
 }
 
 export function SectionHeading({
-  index,
-  eyebrow,
   title,
   description,
   aside
 }: {
-  index: string
-  eyebrow: string
   title: string
   description?: string
   aside?: React.ReactNode
 }): React.JSX.Element {
   return (
-    <div className="flex flex-col gap-6 border-t border-line pt-8 md:flex-row md:items-start md:justify-between">
-      <div className="max-w-[52ch]">
-        <div className="mb-3 flex items-center gap-3 font-mono text-[10px] tracking-[0.24em] text-ink-soft uppercase">
-          <span className="text-ember">{index}</span>
-          <span className="h-px w-6 bg-line" aria-hidden="true" />
-          <span>{eyebrow}</span>
-        </div>
-        <h2 className="text-[26px] font-medium tracking-tighter text-ink md:text-[30px]">{title}</h2>
+    <div className="flex flex-col gap-4 border-t border-line pt-8 md:flex-row md:items-start md:justify-between md:gap-8">
+      <div className="max-w-[58ch]">
+        <h2 className="text-[22px] font-medium tracking-tight text-ink md:text-[24px]">{title}</h2>
         {description && (
-          <p className="mt-2 max-w-[48ch] text-[13.5px] leading-relaxed text-ink-soft">{description}</p>
+          <p className="mt-2 max-w-[52ch] text-[13px] leading-relaxed text-ink-soft">{description}</p>
         )}
       </div>
-      {aside && <div className="shrink-0">{aside}</div>}
+      {aside && <div className="shrink-0 md:pt-1">{aside}</div>}
     </div>
   )
 }
@@ -216,8 +207,25 @@ export const STATUS_META: Record<
   error: { label: '连接异常', dot: 'bg-clay', text: 'text-clay', ring: 'bg-clay/20' }
 }
 
-export function StatusPill({ status }: { status: RoomStatus }): React.JSX.Element {
+export function StatusPill({
+  status,
+  compact = false
+}: {
+  status: RoomStatus
+  compact?: boolean
+}): React.JSX.Element {
   const meta = STATUS_META[status.state]
+  if (compact) {
+    return (
+      <span
+        className="inline-flex items-center gap-1.5 rounded-full border border-line/80 bg-surface/70 px-2 py-[3px] text-[10.5px] text-ink-soft"
+        title={status.state === 'error' ? status.message : meta.label}
+      >
+        <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
+        <span className={meta.text}>{meta.label}</span>
+      </span>
+    )
+  }
   return (
     <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/80 px-3 py-1.5 text-[12px] font-medium">
       <span className="relative flex h-2 w-2">
@@ -230,6 +238,22 @@ export function StatusPill({ status }: { status: RoomStatus }): React.JSX.Elemen
           · {status.message}
         </span>
       )}
+    </span>
+  )
+}
+
+export function MicroLabel({
+  children,
+  className = ''
+}: {
+  children: React.ReactNode
+  className?: string
+}): React.JSX.Element {
+  return (
+    <span
+      className={`font-mono text-[10px] tracking-[0.22em] text-ink-soft uppercase ${className}`}
+    >
+      {children}
     </span>
   )
 }

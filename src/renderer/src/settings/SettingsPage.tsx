@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   ArrowSquareOut,
@@ -32,6 +32,7 @@ import {
   Button,
   Field,
   Grain,
+  MicroLabel,
   SectionHeading,
   StatusPill,
   Toggle
@@ -211,11 +212,6 @@ export function SettingsPage(): React.JSX.Element {
       toastTimers.current.forEach((timer) => window.clearTimeout(timer))
     }
   }, [])
-
-  const enabledCount = useMemo(
-    () => config?.gifts.filter((g) => g.enabled).length ?? 0,
-    [config]
-  )
 
   const updateGift = useCallback(
     (id: string, patch: Partial<GiftRule>) => {
@@ -509,7 +505,7 @@ export function SettingsPage(): React.JSX.Element {
             : '未登录'
   const loginHint =
     loginState === 'valid'
-      ? 'Cookie 已在线验证有效，可随时重新扫码。'
+      ? 'Cookie 有效，可随时重新扫码。'
       : loginState === 'checking'
         ? '正在向 B站 检查 Cookie 是否有效…'
         : loginState === 'invalid'
@@ -550,36 +546,20 @@ export function SettingsPage(): React.JSX.Element {
             ))}
           </nav>
 
-          <div className="mt-auto flex flex-col gap-4">
-            <div className="rounded-2xl border border-line bg-surface/70 p-4">
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-[10px] tracking-[0.2em] text-ink-soft uppercase">
-                  status
-                </span>
-                <StatusPill status={status} />
-              </div>
-              <p className="mt-3 text-[12px] leading-relaxed text-ink-soft">
-                {status.state === 'connected'
-                  ? `${host}，等待礼物消息`
-                  : status.state === 'connecting'
-                    ? '正在建立信息流连接'
-                    : status.state === 'error'
-                      ? status.message
-                      : '尚未连接直播间'}
-              </p>
+          <div className="mt-auto rounded-2xl border border-line bg-surface/70 p-4">
+            <div className="flex items-center justify-between">
+              <MicroLabel>status</MicroLabel>
+              <StatusPill status={status} />
             </div>
-            <button
-              type="button"
-              onClick={() => void api.openOverlay()}
-              className="focus-ring flex items-center justify-between rounded-xl border border-line px-4 py-2.5 text-[12.5px] text-ink transition-colors hover:border-[#ecd9ad] hover:bg-[#fff4d6]"
-            >
-              打开叠加层预览
-              <ArrowSquareOut size={14} />
-            </button>
-            <div className="flex items-center justify-between px-1 font-mono text-[10px] tracking-wider text-[#b7a272]">
-              <span>v{info.version}</span>
-              <span>{info.isDev ? 'dev' : 'local'}</span>
-            </div>
+            <p className="mt-3 text-[12px] leading-relaxed text-ink-soft">
+              {status.state === 'connected'
+                ? `${host}，等待礼物消息`
+                : status.state === 'connecting'
+                  ? '正在建立信息流连接'
+                  : status.state === 'error'
+                    ? status.message
+                    : '尚未连接直播间'}
+            </p>
           </div>
         </aside>
 
@@ -596,12 +576,12 @@ export function SettingsPage(): React.JSX.Element {
               <p className="font-mono text-[10px] tracking-[0.3em] text-ink-soft uppercase">
                 Bilibili live overlay
               </p>
-              <h1 className="mt-5 text-[42px] leading-[0.96] tracking-[-0.045em] text-ink md:text-[58px]">
+              <h1 className="mt-4 text-[36px] leading-[1.02] tracking-[-0.04em] text-ink md:text-[46px]">
                 投喂、掉落、
                 <br />
                 堆满。
               </h1>
-              <svg viewBox="0 0 240 12" className="mt-3 h-3 w-[220px] text-ember/65" aria-hidden="true">
+              <svg viewBox="0 0 240 12" className="mt-3 h-3 w-[180px] text-ember/65" aria-hidden="true">
                 <path
                   d="M2 8c34-6 64 5 96-2s64 5 140-4"
                   fill="none"
@@ -610,30 +590,17 @@ export function SettingsPage(): React.JSX.Element {
                   strokeLinecap="round"
                 />
               </svg>
-              <p className="mt-5 max-w-[48ch] text-[14px] leading-relaxed text-ink-soft">
-                识别直播间礼物，把骨头落进碗里。先填直播间和礼物映射，再把叠加层地址交给 OBS。
+              <p className="mt-4 max-w-[46ch] text-[13.5px] leading-relaxed text-ink-soft">
+                识别直播间礼物，把骨头落进碗里。填好直播间和礼物映射，再把叠加层地址交给 OBS。
               </p>
-              <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] text-ink-soft">
-                <span className="inline-flex items-center gap-1.5">
-                  <Gift size={14} className="text-ember" />
-                  {config.gifts.length} 条映射
-                </span>
-                <span className="h-3 w-px bg-line" aria-hidden="true" />
-                <span>{enabledCount} 条已启用</span>
-                <span className="h-3 w-px bg-line" aria-hidden="true" />
-                <span className="font-mono tabular-nums">端口 {info.port}</span>
-              </div>
             </div>
             <StagePreview rules={config.gifts} latest={activity[0]} />
           </header>
 
-          <section id="room" className="mt-16 scroll-mt-8">
+          <section id="room" className="mt-14 scroll-mt-20">
             <SectionHeading
-              index="01"
-              eyebrow="live room"
               title="直播间"
-              description="填写开播直播间号，并扫码登录 B站账号。未登录无法连接直播间。"
-              aside={<StatusPill status={status} />}
+              description="填写开播直播间号，扫码登录后连接 B站信息流。"
             />
             <div className="mt-7 grid gap-9 lg:grid-cols-[minmax(0,1fr)_344px]">
               <div className="grid gap-6">
@@ -724,18 +691,9 @@ export function SettingsPage(): React.JSX.Element {
                 </div>
               </div>
 
-              <div className="flex flex-col justify-between rounded-2xl border border-line bg-surface/65 p-5">
+              <div className="flex flex-col justify-between gap-6 rounded-2xl border border-line bg-surface/65 p-5">
                 <div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-[10px] tracking-[0.22em] text-ink-soft uppercase">
-                      connection
-                    </span>
-                    {status.state === 'connected' ? (
-                      <span className="font-mono text-[11px] text-moss">live</span>
-                    ) : (
-                      <span className="font-mono text-[11px] text-ink-soft">offline</span>
-                    )}
-                  </div>
+                  <MicroLabel>connection</MicroLabel>
                   <p className="mt-3 min-h-[42px] text-[12.5px] leading-relaxed text-ink-soft">
                     {status.state === 'connected'
                       ? `已接入房间 ${status.realRoomId}，礼物到达后会立即推送。`
@@ -743,26 +701,10 @@ export function SettingsPage(): React.JSX.Element {
                         ? '正在获取密钥并连接弹幕服务器，通常需要一到两秒。'
                         : status.state === 'error'
                           ? status.message
-                          : '连接后自动重连，断线不会中断叠加层。'}
+                          : '连接后礼物实时掉落；与叠加层的连接相互独立。'}
                   </p>
-                  {status.state === 'connected' && (
-                    <div className="mt-3 flex items-center gap-2 rounded-lg bg-moss/8 px-3 py-2 text-[11.5px] text-moss">
-                      <span className="h-1.5 w-1.5 animate-breathe rounded-full bg-moss" />
-                      已登录账号
-                    </div>
-                  )}
-                  {status.state !== 'connected' && !loginUsable && (
-                    <div className="mt-3 flex items-start gap-2 rounded-lg bg-sun/25 px-3 py-2 text-[11.5px] leading-relaxed text-[#7a5a10]">
-                      <SignIn size={14} className="mt-0.5 shrink-0" />
-                      {loginState === 'invalid'
-                        ? '登录已失效，重新扫码后才能连接直播间。'
-                        : loginState === 'error'
-                          ? '暂时无法验证登录状态，重试后再连接。'
-                          : '还没有登录，连接直播间前需要先扫码登录 B站账号。'}
-                    </div>
-                  )}
                 </div>
-                <div className="mt-6 grid gap-3">
+                <div className="grid gap-3">
                   {status.state === 'connected' ? (
                     <Button variant="ghost" onClick={() => void handleDisconnect()} loading={busy === 'connect'}>
                       <Power size={15} />
@@ -771,25 +713,13 @@ export function SettingsPage(): React.JSX.Element {
                   ) : (
                     <Button
                       variant="accent"
-                      onClick={() => {
-                        if (!loginUsable) {
-                          void startQr()
-                          return
-                        }
-                        void handleConnect()
-                      }}
+                      onClick={() => void handleConnect()}
                       loading={busy === 'connect' || qrBusy}
+                      disabled={!loginUsable}
+                      title={loginUsable ? undefined : '先扫码登录 B站账号'}
                     >
-                      {loginUsable ? (
-                        <Broadcast size={15} weight="bold" />
-                      ) : (
-                        <QrCode size={15} weight="bold" />
-                      )}
-                      {status.state === 'connecting'
-                        ? '连接中'
-                        : loginUsable
-                          ? '连接直播间'
-                          : '扫码登录'}
+                      <Broadcast size={15} weight="bold" />
+                      {status.state === 'connecting' ? '连接中' : '连接直播间'}
                     </Button>
                   )}
                   <div className="flex items-center justify-between rounded-xl border border-line/80 px-3 py-2.5">
@@ -811,23 +741,23 @@ export function SettingsPage(): React.JSX.Element {
             </div>
           </section>
 
-          <section id="gifts" className="mt-16 scroll-mt-8">
+          <section id="gifts" className="mt-14 scroll-mt-20">
             <SectionHeading
-              index="02"
-              eyebrow="gift mapping"
               title="礼物映射"
-              description="礼物名称决定触发哪一条规则；每份骨头数量和大小（滑块）都可以按礼物单独调。连击会叠加上限 40 根。"
+              description="按礼物名称匹配规则，每份骨头数量和大小单独可调，单条消息最多 40 根。每行右侧的烧瓶按钮可按该规则试投。"
               aside={
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" onClick={openPicker}>
-                    <Gift size={15} />
-                    选择礼物
-                  </Button>
-                  <Button variant="primary" onClick={addGift}>
-                    <Plus size={15} weight="bold" />
-                    添加
-                  </Button>
-                </div>
+                config.gifts.length > 0 ? (
+                  <div className="flex items-center gap-2">
+                    <Button variant="ghost" onClick={openPicker}>
+                      <Gift size={15} />
+                      选择礼物
+                    </Button>
+                    <Button variant="primary" onClick={addGift}>
+                      <Plus size={15} weight="bold" />
+                      添加
+                    </Button>
+                  </div>
+                ) : undefined
               }
             />
             <div className="mt-7 overflow-hidden rounded-2xl border border-line bg-surface/55">
@@ -882,36 +812,24 @@ export function SettingsPage(): React.JSX.Element {
                 </div>
               )}
             </div>
-            <p className="mt-3 text-[11.5px] leading-relaxed text-ink-soft">
-              提示：用「选择礼物」从直播间面板点选，或手动填写礼物名称。同名礼物会自动合并；每行右侧的烧瓶按钮可以按这条规则试投。单条消息最多生成 40 根骨头，防止刷屏卡顿。
-            </p>
           </section>
 
-          <section id="overlay" className="mt-16 scroll-mt-8">
+          <section id="overlay" className="mt-14 scroll-mt-20">
             <SectionHeading
-              index="03"
-              eyebrow="overlay & obs"
               title="叠加层"
-              description="本地服务把叠加页推给 OBS。窗口关小也不影响输出，物理在页面里独立运行。"
+              description="本地服务把叠加页交给 OBS，物理在页面里独立运行。窗口最小化不影响输出。"
               aside={
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/80 px-3 py-1.5 font-mono text-[11px]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-moss" />
-                    127.0.0.1:{info.port}
+                overlayClients > 0 ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-moss/10 px-2.5 py-1 text-[11px] text-moss">
+                    <span className="h-1.5 w-1.5 animate-breathe rounded-full bg-moss" />
+                    OBS 已连接 {overlayClients}
                   </span>
-                  <span
-                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] ${
-                      overlayClients > 0 ? 'bg-moss/10 text-moss' : 'bg-clay/8 text-clay'
-                    }`}
-                  >
-                    <span
-                      className={`h-1.5 w-1.5 rounded-full ${
-                        overlayClients > 0 ? 'animate-breathe bg-moss' : 'bg-clay'
-                      }`}
-                    />
-                    {overlayClients > 0 ? `OBS 已连接 ${overlayClients}` : 'OBS 未连接'}
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-clay/8 px-2.5 py-1 text-[11px] text-clay">
+                    <span className="h-1.5 w-1.5 rounded-full bg-clay" />
+                    OBS 未连接
                   </span>
-                </div>
+                )
               }
             />
             <div className="mt-7 grid gap-9 lg:grid-cols-[minmax(0,1fr)_344px]">
@@ -939,8 +857,9 @@ export function SettingsPage(): React.JSX.Element {
                 </Field>
 
                 <div className="grid gap-5 sm:grid-cols-[132px_minmax(0,1fr)]">
-                  <Field label="端口" hint="修改后需同步 OBS。">
+                  <Field label="端口" hint="修改后需同步 OBS。" htmlFor="overlay-port">
                     <input
+                      id="overlay-port"
                       className="field-input font-mono tabular-nums"
                       value={portText}
                       inputMode="numeric"
@@ -953,15 +872,16 @@ export function SettingsPage(): React.JSX.Element {
                   </Field>
                   <Field
                     label="骨头消失时长"
+                    htmlFor="bone-lifetime"
                     hint={
                       config.boneLifetimeSec === 0
                         ? '一直保留，直到达到 100 根上限。'
                         : `${config.boneLifetimeSec} 秒后淡出，给新骨头腾位置。`
                     }
-                    className="sm:col-span-2"
                   >
                     <div className="flex h-[38px] items-center gap-3">
                       <input
+                        id="bone-lifetime"
                         type="range"
                         min={0}
                         max={120}
@@ -972,7 +892,7 @@ export function SettingsPage(): React.JSX.Element {
                           setConfig((prev) => (prev ? { ...prev, boneLifetimeSec } : prev))
                           scheduleSave({ boneLifetimeSec })
                         }}
-                        className="range-honey w-full"
+                        className="range-honey w-full min-w-0 flex-1"
                         aria-label="骨头消失时长"
                       />
                       <span className="w-14 shrink-0 text-right font-mono text-[11.5px] tabular-nums text-ink-soft">
@@ -984,9 +904,7 @@ export function SettingsPage(): React.JSX.Element {
               </div>
 
               <div className="rounded-2xl border border-line bg-surface/65 p-5">
-                <div className="font-mono text-[10px] tracking-[0.22em] text-ink-soft uppercase">
-                  obs setup
-                </div>
+                <MicroLabel>obs setup</MicroLabel>
                 <ol className="mt-4 flex flex-col gap-4">
                   {[
                     '场景里添加来源，选择「浏览器」',
@@ -1008,10 +926,8 @@ export function SettingsPage(): React.JSX.Element {
             </div>
           </section>
 
-          <section id="activity" className="mt-16 scroll-mt-8">
+          <section id="activity" className="mt-14 scroll-mt-20">
             <SectionHeading
-              index="04"
-              eyebrow="live feed"
               title="最近事件"
               description="最近十条礼物触发记录，用来确认映射是否生效。"
               aside={
@@ -1062,10 +978,9 @@ export function SettingsPage(): React.JSX.Element {
             </div>
           </section>
 
-          <footer className="mt-20 flex flex-col gap-3 border-t border-line pt-6 text-[11px] text-ink-soft sm:flex-row sm:items-center sm:justify-between">
-            <span>
-              BoneBowl v{info.version} · 更改自动保存在本机 · 端口 {info.port}
-            </span>
+          <footer className="mt-16 flex flex-col gap-2 border-t border-line pt-6 font-mono text-[10px] tracking-wider text-[#b7a272] sm:flex-row sm:items-center sm:justify-between">
+            <span>BoneBowl v{info.version}</span>
+            <span>{info.isDev ? 'dev' : 'local'} · 更改自动保存在本机</span>
           </footer>
         </main>
       </div>
@@ -1128,12 +1043,12 @@ function StagePreview({
   const enabled = rules.filter((rule) => rule.enabled).length
   return (
     <div className="relative overflow-hidden rounded-[32px] border border-line bg-surface/90 p-5 shadow-[0_30px_70px_-45px_rgba(120,86,26,0.45)]">
-      <div className="flex items-center justify-between font-mono text-[9.5px] tracking-[0.2em] text-ink-soft uppercase">
-        <span className="flex items-center gap-2">
+      <div className="flex items-center justify-between">
+        <MicroLabel className="flex items-center gap-2 text-[9.5px] tracking-[0.2em]">
           <span className="h-1.5 w-1.5 animate-breathe rounded-full bg-ember" />
           stage preview
-        </span>
-        <span>{enabled} on</span>
+        </MicroLabel>
+        <MicroLabel className="text-[9.5px] tracking-[0.2em]">{enabled} on</MicroLabel>
       </div>
       <svg viewBox="0 0 260 164" className="mt-2 w-full" aria-hidden="true">
         <ellipse cx="130" cy="150" rx="78" ry="9" fill="#3a2f1f" opacity="0.1" />
@@ -1183,7 +1098,7 @@ function StagePreview({
       </svg>
       <div className="mt-1 flex items-end justify-between gap-4">
         <div>
-          <div className="font-mono text-[9px] tracking-[0.18em] text-ink-soft uppercase">mapped gifts</div>
+          <MicroLabel className="text-[9px] tracking-[0.18em]">mapped gifts</MicroLabel>
           <div className="font-mono text-[22px] leading-tight tabular-nums">{rules.length}</div>
         </div>
         <div className="max-w-[150px] text-right text-[10.5px] leading-relaxed text-ink-soft">
