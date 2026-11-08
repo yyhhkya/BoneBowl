@@ -191,12 +191,11 @@ const mockApi: BoneBowlAPI = {
     return { key, image, expiresIn: 180 }
   },
   qrPoll: async (key: string): Promise<QrLoginPoll> => {
-    const response = await fetch(
-      `/bili-passport/x/passport-login/web/qrcode/poll?qrcode_key=${encodeURIComponent(key)}`
-    )
+    const response = await fetch(`/bili-poll?qrcode_key=${encodeURIComponent(key)}`)
     if (!response.ok) return { state: 'error', message: `轮询失败：HTTP ${response.status}` }
     const json = (await response.json()) as {
       code?: number
+      sessdata?: string
       data?: { code?: number; message?: string }
     }
     if (json.code !== 0) return { state: 'error', message: '轮询失败，请刷新二维码' }
@@ -205,17 +204,34 @@ const mockApi: BoneBowlAPI = {
     if (status === 86090) return { state: 'scanned', message: '已扫码，在手机上确认' }
     if (status === 86038) return { state: 'expired', message: '二维码已过期' }
     if (status !== 0) return { state: 'error', message: json.data?.message || '未知状态' }
-    // 浏览器读不到 HttpOnly 的 SESSDATA，预览登录成功后用模拟会话
-    mockConfig.sessdata = 'mock-SESSDATA'
+    const sessdata = (json.sessdata ?? '').trim()
+    if (!sessdata) return { state: 'error', message: '登录成功，但没有取到 SESSDATA' }
+    mockConfig.sessdata = sessdata
     persistMockConfig()
-    return { state: 'success', sessdata: 'mock-SESSDATA' }
+    const nav = await fetch(`/bili-nav?sessdata=${encodeURIComponent(sessdata)}`)
+      .then((res) => res.json())
+      .catch(() => null)
+    return { state: 'success', sessdata, uname: nav?.data?.uname, uid: nav?.data?.mid }
   },
   verifyLogin: async (): Promise<LoginCheck> => {
-    if (!mockConfig.sessdata.trim()) return { state: 'none', message: '还没有登录' }
-    if (mockConfig.sessdata === 'mock-SESSDATA') {
-      return { state: 'valid', uname: '月见里的兔子', uid: 60861121 }
+    const sessdata = mockConfig.sessdata.trim()
+    if (!sessdata) return { state: 'none', message: '还没有登录' }
+    if (sessdata === 'mock-SESSDATA') {
+      return { state: 'valid', message: '预览占位会话' }
     }
-    return { state: 'invalid', message: '登录已失效，请重新扫码' }
+    try {
+      const response = await fetch(`/bili-nav?sessdata=${encodeURIComponent(sessdata)}`)
+      if (!response.ok) return { state: 'error', message: `验证登录失败：HTTP ${response.status}` }
+      const json = (await response.json()) as {
+        data?: { isLogin?: boolean; uname?: string; mid?: number }
+      }
+      if (json.data?.isLogin && json.data.mid) {
+        return { state: 'valid', uname: json.data.uname, uid: json.data.mid }
+      }
+      return { state: 'invalid', message: '登录已失效，请重新扫码' }
+    } catch {
+      return { state: 'error', message: '无法验证登录状态' }
+    }
   },
   onStatus: (cb) => {
     statusListeners.add(cb)
