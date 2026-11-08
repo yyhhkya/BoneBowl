@@ -60,6 +60,25 @@ function emitStatus(status: RoomStatus, wait = 0): void {
   setTimeout(() => statusListeners.forEach((cb) => cb(status)), wait)
 }
 
+interface RawGift {
+  id?: number
+  name?: string
+  price?: number
+  coin_type?: string
+  webp?: string
+  img_basic?: string
+}
+
+function mapGift(item: RawGift): GiftCatalogItem {
+  return {
+    id: Number(item.id),
+    name: typeof item.name === 'string' && item.name ? item.name : `礼物 ${item.id}`,
+    price: Number(item.price) || 0,
+    coinType: typeof item.coin_type === 'string' ? item.coin_type : '',
+    image: (typeof item.webp === 'string' && item.webp) || (typeof item.img_basic === 'string' ? item.img_basic : '')
+  }
+}
+
 const mockCatalog: GiftCatalogItem[] = [
   { id: 31036, name: '小花花', price: 100, coinType: 'gold', image: 'https://i0.hdslb.com/bfs/live/28357ba4cd566418730ca29da2c552efa7e4a390.webp' },
   { id: 31039, name: '牛哇牛哇', price: 100, coinType: 'gold', image: 'https://i0.hdslb.com/bfs/live/7571c8bdfcb65f9b00ab1307b2c86630f0d00859.webp' },
@@ -117,8 +136,28 @@ const mockApi: BoneBowlAPI = {
   getStatus: async () => mockStatus,
   fetchGifts: async (roomId) => {
     if (!roomId) throw new Error('先填写直播间号')
-    await delay(700)
-    return mockCatalog
+    // 预览里通过 Vite 代理拉真实礼物面板，失败则退回内置示例
+    const controller = new AbortController()
+    const timer = window.setTimeout(() => controller.abort(), 8000)
+    try {
+      const init = (await fetch(`/bili-live/room/v1/Room/room_init?id=${roomId}`, {
+        signal: controller.signal
+      }).then((res) => res.json())) as { data?: { room_id?: number } }
+      const realId = Number(init?.data?.room_id) || roomId
+      const json = (await fetch(
+        `/bili-live/xlive/web-room/v1/giftPanel/giftConfig?platform=pc&room_id=${realId}`,
+        { signal: controller.signal }
+      ).then((res) => res.json())) as { data?: { list?: RawGift[] } }
+      const list = json?.data?.list ?? []
+      if (!Array.isArray(list) || list.length === 0) throw new Error('礼物列表为空')
+      return list.filter((item) => Number.isFinite(item.id)).map(mapGift)
+    } catch {
+      await delay(300)
+      return mockCatalog
+    } finally {
+      window.clearTimeout(timer)
+      controller.abort()
+    }
   },
   testGift: async (size) => {
     emitGift(size)

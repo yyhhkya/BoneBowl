@@ -156,21 +156,34 @@ interface GiftListEntry {
 export async function fetchGiftCatalog(shortRoomId: number, sessdata: string): Promise<GiftCatalogItem[]> {
   const room = await getRealRoomId(shortRoomId)
   const buvid = await getBuvid()
-  const json = await biliFetch<{
-    gift_config?: { base_config?: { list?: GiftListEntry[] } }
-    gift_data?: {
-      room_gift_list?: { gold_list?: GiftListEntry[]; silver_list?: GiftListEntry[] }
-    }
-  }>(
-    // platform 必须是 pc，传 web 服务端会返回空列表
-    `https://api.live.bilibili.com/xlive/web-room/v1/giftPanel/roomGiftList?platform=pc&room_id=${room.roomId}`,
-    cookieHeader(sessdata, buvid)
+  const cookie = cookieHeader(sessdata, buvid)
+
+  // 完整礼物配置：金币、银瓜子和活动礼物都在这里，约一千条
+  const config = await biliFetch<{ list?: GiftListEntry[] }>(
+    `https://api.live.bilibili.com/xlive/web-room/v1/giftPanel/giftConfig?platform=pc&room_id=${room.roomId}`,
+    cookie
   )
-  const base = json.data?.gift_config?.base_config?.list ?? []
-  const roomGifts = json.data?.gift_data?.room_gift_list
-  const combined = base.length
-    ? base
-    : [...(roomGifts?.gold_list ?? []), ...(roomGifts?.silver_list ?? [])]
+  let combined = config.data?.list ?? []
+
+  // 新版接口拿不到时退回房间礼物面板（只有基础礼物）
+  if (combined.length === 0) {
+    const json = await biliFetch<{
+      gift_config?: { base_config?: { list?: GiftListEntry[] } }
+      gift_data?: {
+        room_gift_list?: { gold_list?: GiftListEntry[]; silver_list?: GiftListEntry[] }
+      }
+    }>(
+      // platform 必须是 pc，传 web 服务端会返回空列表
+      `https://api.live.bilibili.com/xlive/web-room/v1/giftPanel/roomGiftList?platform=pc&room_id=${room.roomId}`,
+      cookie
+    )
+    const base = json.data?.gift_config?.base_config?.list ?? []
+    const roomGifts = json.data?.gift_data?.room_gift_list
+    combined = base.length
+      ? base
+      : [...(roomGifts?.gold_list ?? []), ...(roomGifts?.silver_list ?? [])]
+  }
+
   if (combined.length === 0) {
     throw new Error('没有取到礼物列表，确认直播间号正确或稍后重试，也可以手动添加礼物 ID')
   }
