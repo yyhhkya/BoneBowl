@@ -83,6 +83,8 @@ const mockApi: BoneBowlAPI = {
   connect: async (opts) => {
     const roomId = opts?.roomId ?? mockConfig.roomId
     if (!roomId) throw new Error('先填写直播间号')
+    const sessdata = (opts?.sessdata ?? mockConfig.sessdata).trim()
+    if (!sessdata) throw new Error('连接直播间需要先扫码登录 B站账号')
     mockConfig.roomId = roomId
     emitStatus({ state: 'connecting', roomId })
     await delay(900)

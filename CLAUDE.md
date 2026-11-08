@@ -38,8 +38,8 @@ docs/              README 截图
 
 ## 关键约束
 
-- **B站协议**：`getDanmuInfo` 需要 Wbi 签名与 Cookie 中的 `buvid3`；信息流是 WebSocket 二进制封包（protover 2/3，zlib/brotli），认证 op=7、心跳 op=2、消息 op=5。匿名连接时昵称会被打码；扫码登录后把 SESSDATA 存入配置。
-- **扫码登录**：`passport.bilibili.com/x/passport-login/web/qrcode/generate` 生成，poll 返回 0/86101/86090/86038。成功后从 Set-Cookie 取 SESSDATA，主进程保存并清理登录 UID 缓存。
+- **B站协议**：`getDanmuInfo` 需要 Wbi 签名与 Cookie 中的 `buvid3`；信息流是 WebSocket 二进制封包（protover 2/3，zlib/brotli），认证 op=7、心跳 op=2、消息 op=5。必须登录（配置里有 `sessdata`）才允许连接直播间，自动连接同样受此限制。
+- **扫码登录**：`passport.bilibili.com/x/passport-login/web/qrcode/generate` 生成，poll 返回 0/86101/86090/86038。成功后从 Set-Cookie 取 SESSDATA，主进程保存并清理登录 UID 缓存。设置页只提供扫码登录，不保留手动粘贴输入框。
 - **礼物事件**：`SEND_GIFT`，按 `tid` 去重；映射规则见 `AppConfig.gifts`，单条最多 40 根骨头。
 - **叠加层**：透明背景，1920×1080 设计坐标缩放适配；骨头用系统 🦴 字形生成贴图并裁剪；碗的碰撞体是“外壁 + 碗口 + 内壁”的闭合截面；碗前壁半透明（约 58%）；不加隐形挡墙；骨头数量上限 100，可设置消失时长（0 = 永不）。
 - **自动更新**：electron-updater generic 源，仅对 NSIS 安装版有效；feed 地址来自配置 `updateFeedUrl`，默认空不检查。打包配置里的 `build.publish` 是占位地址，发布前需要替换。

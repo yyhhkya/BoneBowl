@@ -8,13 +8,12 @@ import {
   CloudArrowDown,
   Copy,
   DownloadSimple,
-  Eye,
-  EyeSlash,
   Flask,
   Gift,
   Plus,
   Power,
   QrCode,
+  SignIn,
   Sparkle,
   WarningCircle
 } from '@phosphor-icons/react'
@@ -90,7 +89,6 @@ export function SettingsPage(): React.JSX.Element {
   const [roomIdText, setRoomIdText] = useState('')
   const [roomError, setRoomError] = useState<string | null>(null)
   const [sessdata, setSessdata] = useState('')
-  const [showCookie, setShowCookie] = useState(false)
   const [busy, setBusy] = useState<'connect' | 'import' | null>(null)
   const [activity, setActivity] = useState<GiftEvent[]>([])
   const [toasts, setToasts] = useState<Toast[]>([])
@@ -234,6 +232,11 @@ export function SettingsPage(): React.JSX.Element {
       setRoomError('填写有效的直播间号')
       return
     }
+    if (!sessdata.trim()) {
+      setRoomError(null)
+      pushToast('连接直播间前先扫码登录 B站账号', 'error')
+      return
+    }
     setRoomError(null)
     setBusy('connect')
     try {
@@ -300,10 +303,13 @@ export function SettingsPage(): React.JSX.Element {
     }
   }, [roomIdText, scheduleSave])
 
-  const commitCookie = useCallback(() => {
-    setConfig((prev) => (prev ? { ...prev, sessdata } : prev))
-    scheduleSave({ sessdata })
-  }, [sessdata, scheduleSave])
+  const handleLogout = useCallback(async () => {
+    setSessdata('')
+    setConfig((prev) => (prev ? { ...prev, sessdata: '' } : prev))
+    await flushSave({ sessdata: '' })
+    if (status.state === 'connected') await api.disconnect()
+    pushToast('已退出登录')
+  }, [flushSave, pushToast, status.state])
 
   const commitPort = useCallback(async () => {
     const port = Number(portText)
@@ -556,7 +562,7 @@ export function SettingsPage(): React.JSX.Element {
               index="01"
               eyebrow="live room"
               title="直播间"
-              description="填写开播直播间号。需要显示观众昵称时填写 SESSDATA，否则 B站会把昵称打码。"
+              description="填写开播直播间号，并扫码登录 B站账号。未登录无法连接直播间。"
               aside={<StatusPill status={status} />}
             />
             <div className="mt-7 grid gap-9 lg:grid-cols-[minmax(0,1fr)_344px]">
@@ -584,44 +590,50 @@ export function SettingsPage(): React.JSX.Element {
                   />
                 </Field>
 
-                <Field
-                  label="SESSDATA"
-                  hint="可选。用于显示昵称和导入礼物；推荐直接扫码登录。"
-                  htmlFor="sessdata"
-                  action={
-                    <Button
-                      variant="ghost"
-                      className="!px-3 !py-1.5 !text-[11.5px]"
-                      onClick={() => void startQr()}
-                      loading={qrBusy}
-                    >
-                      <QrCode size={14} />
-                      {sessdata.trim() ? '重新扫码' : '扫码登录'}
-                    </Button>
-                  }
-                >
-                  <div className="relative">
-                    <input
-                      id="sessdata"
-                      className="field-input pr-11 font-mono !text-[12px]"
-                      type={showCookie ? 'text' : 'password'}
-                      value={sessdata}
-                      placeholder="粘贴 B站 Cookie 中的 SESSDATA"
-                      autoComplete="off"
-                      spellCheck={false}
-                      onChange={(event) => setSessdata(event.target.value)}
-                      onBlur={commitCookie}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowCookie((prev) => !prev)}
-                      aria-label={showCookie ? '隐藏 SESSDATA' : '显示 SESSDATA'}
-                      className="focus-ring absolute top-1/2 right-2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-ink-soft transition-colors hover:bg-black/5 hover:text-ink"
-                    >
-                      {showCookie ? <EyeSlash size={16} /> : <Eye size={16} />}
-                    </button>
+                <div className="grid gap-2">
+                  <span className="text-[12.5px] font-medium text-ink">B站账号</span>
+                  <div className="flex items-center justify-between gap-4 rounded-2xl border border-line bg-surface px-4 py-3.5">
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${
+                          sessdata.trim() ? 'bg-moss/12 text-moss' : 'bg-sun/35 text-[#7a5a10]'
+                        }`}
+                      >
+                        {sessdata.trim() ? <Check size={16} weight="bold" /> : <SignIn size={16} weight="bold" />}
+                      </span>
+                      <div>
+                        <div className="text-[13px] font-medium">
+                          {sessdata.trim() ? '已登录 B站账号' : '未登录'}
+                        </div>
+                        <div className="mt-0.5 text-[11px] leading-relaxed text-ink-soft">
+                          {sessdata.trim()
+                            ? 'Cookie 已保存在本机，可随时重新扫码。'
+                            : '连接直播间必须登录，用 B站手机客户端扫码即可。'}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      {sessdata.trim() && (
+                        <Button
+                          variant="ghost"
+                          className="!px-3 !py-1.5 !text-[11.5px]"
+                          onClick={() => void handleLogout()}
+                        >
+                          退出登录
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        className="!px-3 !py-1.5 !text-[11.5px]"
+                        onClick={() => void startQr()}
+                        loading={qrBusy}
+                      >
+                        <QrCode size={14} />
+                        {sessdata.trim() ? '重新扫码' : '扫码登录'}
+                      </Button>
+                    </div>
                   </div>
-                </Field>
+                </div>
               </div>
 
               <div className="flex flex-col justify-between rounded-2xl border border-line bg-surface/65 p-5">
@@ -648,7 +660,13 @@ export function SettingsPage(): React.JSX.Element {
                   {status.state === 'connected' && (
                     <div className="mt-3 flex items-center gap-2 rounded-lg bg-moss/8 px-3 py-2 text-[11.5px] text-moss">
                       <span className="h-1.5 w-1.5 animate-breathe rounded-full bg-moss" />
-                      {sessdata.trim() ? '登录观看' : '匿名观看'}
+                      已登录账号
+                    </div>
+                  )}
+                  {status.state !== 'connected' && !sessdata.trim() && (
+                    <div className="mt-3 flex items-start gap-2 rounded-lg bg-sun/25 px-3 py-2 text-[11.5px] leading-relaxed text-[#7a5a10]">
+                      <SignIn size={14} className="mt-0.5 shrink-0" />
+                      还没有登录，连接直播间前需要先扫码登录 B站账号。
                     </div>
                   )}
                 </div>
@@ -661,11 +679,21 @@ export function SettingsPage(): React.JSX.Element {
                   ) : (
                     <Button
                       variant="accent"
-                      onClick={() => void handleConnect()}
-                      loading={busy === 'connect'}
+                      onClick={() => {
+                        if (!sessdata.trim()) {
+                          void startQr()
+                          return
+                        }
+                        void handleConnect()
+                      }}
+                      loading={busy === 'connect' || qrBusy}
                     >
-                      <Broadcast size={15} weight="bold" />
-                      {status.state === 'connecting' ? '连接中' : '连接直播间'}
+                      {sessdata.trim() ? <Broadcast size={15} weight="bold" /> : <QrCode size={15} weight="bold" />}
+                      {status.state === 'connecting'
+                        ? '连接中'
+                        : sessdata.trim()
+                          ? '连接直播间'
+                          : '扫码登录'}
                     </Button>
                   )}
                   <div className="flex items-center justify-between rounded-xl border border-line/80 px-3 py-2.5">

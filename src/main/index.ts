@@ -83,12 +83,17 @@ function stopClient(): void {
 function startClient(opts: { roomId?: number | null; sessdata?: string } = {}): RoomStatus {
   const config = loadConfig()
   const roomId = opts.roomId ?? config.roomId
+  const sessdata = (opts.sessdata ?? config.sessdata).trim()
   if (!roomId) {
     emitStatus({ state: 'error', message: '还没有填写直播间号' })
     return lastStatus
   }
+  if (!sessdata) {
+    emitStatus({ state: 'error', message: '连接直播间需要先扫码登录 B站账号' })
+    return lastStatus
+  }
   stopClient()
-  const client = new LiveClient({ roomId, sessdata: opts.sessdata ?? config.sessdata })
+  const client = new LiveClient({ roomId, sessdata })
   liveClient = client
   client.on('status', emitStatus)
   client.on('gift', (data: SendGiftData) => handleGift(data))
@@ -242,7 +247,7 @@ if (!gotLock) {
       if (BrowserWindow.getAllWindows().length === 0) createWindow()
     })
 
-    if (config.autoConnect && config.roomId) startClient({ roomId: config.roomId })
+    if (config.autoConnect && config.roomId && config.sessdata) startClient({ roomId: config.roomId })
 
     if (config.autoUpdate && config.updateFeedUrl && app.isPackaged) {
       setTimeout(() => void checkForUpdates(), 4000)
