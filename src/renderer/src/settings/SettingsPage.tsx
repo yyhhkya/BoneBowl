@@ -6,7 +6,7 @@ import {
   Check,
   CircleNotch,
   Copy,
-  Flask,
+  EyeSlash,
   Gift,
   Plus,
   Power,
@@ -15,11 +15,8 @@ import {
   WarningCircle
 } from '@phosphor-icons/react'
 import {
-  SIZES,
-  SIZE_LABEL,
   type AppConfig,
   type AppInfo,
-  type BoneSize,
   type GiftEvent,
   type GiftCatalogItem,
   type GiftRule,
@@ -255,7 +252,7 @@ export function SettingsPage(): React.JSX.Element {
           giftId: 0,
           name: '',
           bones: 1,
-          size: 'medium' as BoneSize,
+          scale: 1,
           enabled: true
         }
       ]
@@ -293,9 +290,9 @@ export function SettingsPage(): React.JSX.Element {
   }, [roomIdText, sessdata, loginCheck?.state, pushToast])
 
   const handleTestGift = useCallback(
-    async (size: BoneSize) => {
+    async (ruleId: string) => {
       try {
-        const clients = await api.testGift(size)
+        const clients = await api.testGift(ruleId)
         setOverlayClients(clients)
         if (clients > 0) {
           pushToast(`已试投，叠加层已连接（${clients}）`)
@@ -347,7 +344,7 @@ export function SettingsPage(): React.JSX.Element {
             giftId: item.id,
             name,
             bones: 1,
-            size: 'medium',
+            scale: 1,
             enabled: true
           })
         }
@@ -822,7 +819,7 @@ export function SettingsPage(): React.JSX.Element {
               index="02"
               eyebrow="gift mapping"
               title="礼物映射"
-              description="礼物名称决定触发哪一条规则，数量是每份礼物掉落的骨头数。连击会叠加上限 40 根。"
+              description="礼物名称决定触发哪一条规则；每份骨头数量和大小（滑块）都可以按礼物单独调。连击会叠加上限 40 根。"
               aside={
                 <div className="flex items-center gap-2">
                   <Button variant="ghost" onClick={openPicker}>
@@ -879,6 +876,7 @@ export function SettingsPage(): React.JSX.Element {
                         <GiftRow
                           rule={rule}
                           onChange={(patch) => updateGift(rule.id, patch)}
+                          onTest={() => void handleTestGift(rule.id)}
                           onRemove={() => removeGift(rule.id)}
                         />
                       </motion.div>
@@ -888,7 +886,7 @@ export function SettingsPage(): React.JSX.Element {
               )}
             </div>
             <p className="mt-3 text-[11.5px] leading-relaxed text-ink-soft">
-              提示：用「选择礼物」从直播间面板点选，或手动填写礼物名称。同名礼物会自动合并。单条消息最多生成 40 根骨头，防止刷屏卡顿。
+              提示：用「选择礼物」从直播间面板点选，或手动填写礼物名称。同名礼物会自动合并；每行右侧的烧瓶按钮可以按这条规则试投。单条消息最多生成 40 根骨头，防止刷屏卡顿。
             </p>
           </section>
 
@@ -899,10 +897,24 @@ export function SettingsPage(): React.JSX.Element {
               title="叠加层"
               description="本地服务把叠加页推给 OBS。窗口关小也不影响输出，物理在页面里独立运行。"
               aside={
-                <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/80 px-3 py-1.5 font-mono text-[11px]">
-                  <span className="h-1.5 w-1.5 rounded-full bg-moss" />
-                  127.0.0.1:{info.port}
-                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/80 px-3 py-1.5 font-mono text-[11px]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-moss" />
+                    127.0.0.1:{info.port}
+                  </span>
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] ${
+                      overlayClients > 0 ? 'bg-moss/10 text-moss' : 'bg-clay/8 text-clay'
+                    }`}
+                  >
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${
+                        overlayClients > 0 ? 'animate-breathe bg-moss' : 'bg-clay'
+                      }`}
+                    />
+                    {overlayClients > 0 ? `OBS 已连接 ${overlayClients}` : 'OBS 未连接'}
+                  </span>
+                </div>
               }
             />
             <div className="mt-7 grid gap-9 lg:grid-cols-[minmax(0,1fr)_344px]">
@@ -943,30 +955,6 @@ export function SettingsPage(): React.JSX.Element {
                     />
                   </Field>
                   <Field
-                    label="骨头大小"
-                    hint={`当前 ${Math.round(config.overlayScale * 100)}%，只影响画面表现。`}
-                  >
-                    <div className="flex h-[38px] items-center gap-3">
-                      <input
-                        type="range"
-                        min={0.7}
-                        max={1.6}
-                        step={0.05}
-                        value={config.overlayScale}
-                        onChange={(event) => {
-                          const overlayScale = Number(event.target.value)
-                          setConfig((prev) => (prev ? { ...prev, overlayScale } : prev))
-                          scheduleSave({ overlayScale })
-                        }}
-                        className="range-honey w-full"
-                        aria-label="骨头大小"
-                      />
-                      <span className="w-12 shrink-0 text-right font-mono text-[11.5px] tabular-nums text-ink-soft">
-                        {config.overlayScale.toFixed(2)}×
-                      </span>
-                    </div>
-                  </Field>
-                  <Field
                     label="骨头消失时长"
                     hint={
                       config.boneLifetimeSec === 0
@@ -995,42 +983,6 @@ export function SettingsPage(): React.JSX.Element {
                       </span>
                     </div>
                   </Field>
-                </div>
-
-                <div className="rounded-2xl border border-line bg-surface/55 p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-[12.5px] font-medium">
-                      <Flask size={15} className="text-ember" />
-                      试投
-                    </div>
-                    <span
-                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] ${
-                        overlayClients > 0 ? 'bg-moss/10 text-moss' : 'bg-clay/8 text-clay'
-                      }`}
-                    >
-                      <span
-                        className={`h-1.5 w-1.5 rounded-full ${
-                          overlayClients > 0 ? 'animate-breathe bg-moss' : 'bg-clay'
-                        }`}
-                      />
-                      {overlayClients > 0 ? `OBS 已连接 ${overlayClients}` : 'OBS 未连接'}
-                    </span>
-                  </div>
-                  <div className="mt-3 grid grid-cols-3 gap-2">
-                    {SIZES.map((size: BoneSize) => (
-                      <Button
-                        key={size}
-                        variant="ghost"
-                        className="!py-2"
-                        onClick={() => void handleTestGift(size)}
-                      >
-                        投一根{SIZE_LABEL[size]}
-                      </Button>
-                    ))}
-                  </div>
-                  <p className="mt-2 text-[11px] leading-relaxed text-ink-soft">
-                    试投通过 WebSocket 推给叠加层；显示未连接时，检查 OBS 浏览器源地址和端口。
-                  </p>
                 </div>
               </div>
 
@@ -1117,16 +1069,6 @@ export function SettingsPage(): React.JSX.Element {
             <span>
               BoneBowl v{info.version} · 更改自动保存在本机 · 端口 {info.port}
             </span>
-            <button
-              type="button"
-              onClick={() =>
-                void api.openExternal('https://github.com/SocialSisterYi/bilibili-API-collect')
-              }
-              className="focus-ring inline-flex items-center gap-1.5 text-ink-soft transition-colors hover:text-ink"
-            >
-              B站协议文档
-              <ArrowSquareOut size={12} />
-            </button>
           </footer>
         </main>
       </div>

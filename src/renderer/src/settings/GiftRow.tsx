@@ -1,20 +1,22 @@
-import { Trash } from '@phosphor-icons/react'
-import { SIZES, SIZE_LABEL, type GiftRule } from '../../../shared/types'
-import { Segmented, Stepper, Toggle } from './ui'
+import { Flask, Trash } from '@phosphor-icons/react'
+import type { GiftRule } from '../../../shared/types'
+import { Stepper, Toggle } from './ui'
 
 export function GiftRow({
   rule,
   onChange,
+  onTest,
   onRemove
 }: {
   rule: GiftRule
   onChange: (patch: Partial<GiftRule>) => void
+  onTest: () => void
   onRemove: () => void
 }): React.JSX.Element {
   const invalid = !rule.name.trim()
   return (
     <div
-      className={`group grid gap-3 px-4 py-3.5 transition-colors hover:bg-white/55 sm:grid-cols-[minmax(0,1fr)_108px_132px_44px_32px] sm:items-center ${
+      className={`group grid gap-3 px-4 py-3.5 transition-colors hover:bg-white/55 sm:grid-cols-[minmax(0,1fr)_108px_132px_44px_76px] sm:items-center ${
         rule.enabled ? '' : 'opacity-55'
       }`}
     >
@@ -38,19 +40,39 @@ export function GiftRow({
         <span className="sr-only">每份掉落 {rule.bones} 根骨头</span>
       </div>
 
-      <Segmented
-        value={rule.size}
-        layoutId={`size-${rule.id}`}
-        onChange={(size) => onChange({ size })}
-        options={SIZES.map((size) => ({ value: size, label: SIZE_LABEL[size] }))}
-      />
+      <div className="grid gap-1">
+        <input
+          type="range"
+          min={0.5}
+          max={2}
+          step={0.05}
+          value={rule.scale}
+          aria-label={`${rule.name || '礼物'} 骨头大小`}
+          className="range-honey w-full"
+          onChange={(event) => onChange({ scale: Number(event.target.value) })}
+        />
+        <span className="font-mono text-[10px] text-ink-soft tabular-nums">
+          {rule.scale.toFixed(2)}×
+        </span>
+      </div>
 
-      <div className="flex items-center justify-between gap-3 sm:justify-center">
+      <div className="flex items-center justify-between gap-2 sm:justify-center">
         <Toggle
           checked={rule.enabled}
           onChange={(enabled) => onChange({ enabled })}
           label={`${rule.name || '该礼物'} 启用`}
         />
+      </div>
+      <div className="flex items-center justify-end gap-1">
+        <button
+          type="button"
+          onClick={onTest}
+          title="按当前设置试投一根"
+          aria-label={`试投 ${rule.name || '该礼物'}`}
+          className="focus-ring grid h-8 w-8 place-items-center rounded-lg text-ink-soft transition-colors hover:bg-sun/35 hover:text-[#7a5a10]"
+        >
+          <Flask size={15} />
+        </button>
         <button
           type="button"
           onClick={onRemove}

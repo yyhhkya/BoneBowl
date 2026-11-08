@@ -4,7 +4,7 @@ import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import type { Plugin, ViteDevServer } from 'vite'
 import { normalizeConfig } from './src/shared/config'
-import { DEFAULT_CONFIG, type AppConfig, type BoneSize, type GiftEvent } from './src/shared/types'
+import { DEFAULT_CONFIG, type AppConfig, type GiftEvent } from './src/shared/types'
 import { refreshLoginIfNeeded } from './src/main/bilibili/refresh'
 import { OverlayServer } from './src/main/server'
 
@@ -71,10 +71,7 @@ function ensureOverlayService(): Promise<{ server: OverlayServer; port: number }
       const overlay = new OverlayServer(join(process.cwd(), 'out', 'renderer'))
       overlay.setConfigProvider(() => {
         const current = readConfig()
-        return {
-          overlayScale: current.overlayScale,
-          boneLifetimeSec: current.boneLifetimeSec
-        }
+        return { boneLifetimeSec: current.boneLifetimeSec }
       })
       const port = await overlay.start(config.port || 17800)
       return { server: overlay, port }
@@ -86,9 +83,12 @@ function ensureOverlayService(): Promise<{ server: OverlayServer; port: number }
   return overlayService
 }
 
-function buildTestGift(size: BoneSize): GiftEvent {
+function buildTestGift(ruleId?: string): GiftEvent {
   const config = readConfig()
-  const rule = config.gifts.find((g) => g.enabled) ?? config.gifts[0]
+  const rule =
+    (ruleId ? config.gifts.find((g) => g.id === ruleId) : undefined) ??
+    config.gifts.find((g) => g.enabled) ??
+    config.gifts[0]
   return {
     giftId: rule?.giftId ?? 0,
     giftName: rule?.name ?? '测试骨头',
@@ -96,7 +96,7 @@ function buildTestGift(size: BoneSize): GiftEvent {
     uname: '测试观众',
     num: 1,
     bones: Math.max(1, rule?.bones ?? 1),
-    size,
+    scale: rule?.scale ?? 1,
     timestamp: Date.now()
   }
 }
@@ -137,11 +137,9 @@ export function devApiPlugin(): Plugin {
 
         if (url.pathname === '/dev-test-gift' && req.method === 'POST') {
           try {
-            const body = JSON.parse((await readBody(req)) || '{}') as { size?: BoneSize }
-            const size: BoneSize =
-              body.size === 'small' || body.size === 'large' ? body.size : 'medium'
+            const body = JSON.parse((await readBody(req)) || '{}') as { ruleId?: string }
             const { server: overlay, port } = await ensureOverlayService()
-            const clients = overlay.broadcast({ type: 'gift', gift: buildTestGift(size) })
+            const clients = overlay.broadcast({ type: 'gift', gift: buildTestGift(body.ruleId) })
             sendJson(res, 200, { ok: true, port, clients })
           } catch {
             sendJson(res, 500, { message: '试投失败' })

@@ -4,7 +4,6 @@ import {
   type AppConfig,
   type AppInfo,
   type BoneBowlAPI,
-  type BoneSize,
   type GiftCatalogItem,
   type GiftEvent,
   type LoginCheck,
@@ -64,8 +63,11 @@ function mapGift(item: RawGift): GiftCatalogItem {
   }
 }
 
-function buildMockGift(size: BoneSize = 'medium'): GiftEvent {
-  const rule = mockConfig.gifts.find((g) => g.enabled) ?? mockConfig.gifts[0]
+function buildMockGift(ruleId?: string): GiftEvent {
+  const rule =
+    (ruleId ? mockConfig.gifts.find((g) => g.id === ruleId) : undefined) ??
+    mockConfig.gifts.find((g) => g.enabled) ??
+    mockConfig.gifts[0]
   return {
     giftId: rule?.giftId ?? 31036,
     giftName: rule?.name ?? '小花花',
@@ -73,13 +75,13 @@ function buildMockGift(size: BoneSize = 'medium'): GiftEvent {
     uname: '月见里的兔子',
     num: 1,
     bones: rule?.bones ?? 3,
-    size,
+    scale: rule?.scale ?? 1,
     timestamp: Date.now()
   }
 }
 
-function emitGift(size: BoneSize = 'medium', broadcast = true): void {
-  const gift = buildMockGift(size)
+function emitGift(ruleId?: string, broadcast = true): void {
+  const gift = buildMockGift(ruleId)
   setTimeout(() => giftListeners.forEach((cb) => cb(gift)), 20)
   if (broadcast) channel?.postMessage({ type: 'gift', gift })
 }
@@ -145,21 +147,20 @@ const mockApi: BoneBowlAPI = {
       controller.abort()
     }
   },
-  testGift: async (size) => {
-    const boneSize: BoneSize = size ?? 'medium'
+  testGift: async (ruleId) => {
     try {
       const response = await fetch('/dev-test-gift', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ size: boneSize })
+        body: JSON.stringify({ ruleId })
       })
       if (!response.ok) throw new Error('试投失败')
       const result = (await response.json()) as { clients?: number }
       // 已经由叠加层服务通过 WebSocket 广播，这里只更新设置页的事件列表
-      emitGift(boneSize, false)
+      emitGift(ruleId, false)
       return Number(result.clients) || 0
     } catch {
-      emitGift(boneSize)
+      emitGift(ruleId)
       return 0
     }
   },

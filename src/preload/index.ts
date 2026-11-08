@@ -2,7 +2,6 @@ import { contextBridge, ipcRenderer, clipboard } from 'electron'
 import type {
   AppConfig,
   BoneBowlAPI,
-  BoneSize,
   GiftEvent,
   LoginCheck,
   QrLoginInfo,
@@ -17,7 +16,7 @@ const api: BoneBowlAPI = {
   disconnect: () => ipcRenderer.invoke('room:disconnect'),
   getStatus: () => ipcRenderer.invoke('room:status'),
   fetchGifts: (roomId: number) => ipcRenderer.invoke('gifts:fetch', roomId),
-  testGift: (size?: BoneSize) => ipcRenderer.invoke('test:gift', size) as Promise<number>,
+  testGift: (ruleId?: string) => ipcRenderer.invoke('test:gift', ruleId) as Promise<number>,
   getOverlayClients: () => ipcRenderer.invoke('overlay:clients') as Promise<number>,
   getInfo: () => ipcRenderer.invoke('app:info'),
   openOverlay: () => ipcRenderer.invoke('overlay:open'),

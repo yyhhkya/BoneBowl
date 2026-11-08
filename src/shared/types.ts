@@ -1,11 +1,10 @@
-export type BoneSize = 'small' | 'medium' | 'large'
-
 export interface GiftRule {
   id: string
   giftId: number
   name: string
   bones: number
-  size: BoneSize
+  /** 骨头大小倍率，0.5–2.0 */
+  scale: number
   enabled: boolean
 }
 
@@ -16,7 +15,6 @@ export interface AppConfig {
   refreshToken: string
   autoConnect: boolean
   port: number
-  overlayScale: number
   boneLifetimeSec: number
   gifts: GiftRule[]
 }
@@ -28,7 +26,7 @@ export interface GiftEvent {
   uname: string
   num: number
   bones: number
-  size: BoneSize
+  scale: number
   timestamp: number
 }
 
@@ -85,7 +83,7 @@ export interface BoneBowlAPI {
   disconnect: () => Promise<RoomStatus>
   getStatus: () => Promise<RoomStatus>
   fetchGifts: (roomId: number) => Promise<GiftCatalogItem[]>
-  testGift: (size?: BoneSize) => Promise<number>
+  testGift: (ruleId?: string) => Promise<number>
   getOverlayClients: () => Promise<number>
   getInfo: () => Promise<AppInfo>
   openOverlay: () => Promise<void>
@@ -99,14 +97,6 @@ export interface BoneBowlAPI {
   onConfig: (cb: (config: AppConfig) => void) => () => void
 }
 
-export const SIZES: BoneSize[] = ['small', 'medium', 'large']
-
-export const SIZE_LABEL: Record<BoneSize, string> = {
-  small: '小',
-  medium: '中',
-  large: '大'
-}
-
 export const DEFAULT_CONFIG: AppConfig = {
   roomId: null,
   sessdata: '',
@@ -114,7 +104,6 @@ export const DEFAULT_CONFIG: AppConfig = {
   refreshToken: '',
   autoConnect: false,
   port: 17800,
-  overlayScale: 1,
   boneLifetimeSec: 0,
   gifts: []
 }

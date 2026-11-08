@@ -10,7 +10,6 @@ import { refreshLoginIfNeeded } from './bilibili/refresh'
 import type {
   AppConfig,
   AppInfo,
-  BoneSize,
   GiftEvent,
   GiftRule,
   RoomStatus
@@ -130,22 +129,25 @@ function handleGift(data: SendGiftData): void {
     uname: data.uname || '观众',
     num: data.num || 1,
     bones: count,
-    size: rule.size,
+    scale: rule.scale,
     timestamp: data.timestamp ? data.timestamp * 1000 : Date.now()
   }
   server?.broadcast({ type: 'gift', gift: event })
   win?.webContents.send('gift', event)
 }
 
-function pickTestRule(): GiftRule {
+function pickTestRule(ruleId?: string): GiftRule {
   const config = loadConfig()
+  if (ruleId) {
+    const matched = config.gifts.find((g) => g.id === ruleId)
+    if (matched) return matched
+  }
   const enabled = config.gifts.filter((g) => g.enabled)
-  const size: BoneSize = 'medium'
-  return enabled[0] ?? { id: 'test', giftId: 0, name: '测试骨头', bones: 1, size, enabled: true }
+  return enabled[0] ?? { id: 'test', giftId: 0, name: '测试骨头', bones: 1, scale: 1, enabled: true }
 }
 
-function sendTestGift(size?: BoneSize): number {
-  const rule = pickTestRule()
+function sendTestGift(ruleId?: string): number {
+  const rule = pickTestRule(ruleId)
   const event: GiftEvent = {
     giftId: rule.giftId,
     giftName: rule.name,
@@ -153,7 +155,7 @@ function sendTestGift(size?: BoneSize): number {
     uname: '测试观众',
     num: 1,
     bones: Math.max(1, rule.bones),
-    size: size ?? rule.size,
+    scale: rule.scale,
     timestamp: Date.now()
   }
   const sent = server?.broadcast({ type: 'gift', gift: event }) ?? 0
@@ -173,7 +175,7 @@ function registerIpc(): void {
     }
     server?.broadcast({
       type: 'config',
-      config: { overlayScale: next.overlayScale, boneLifetimeSec: next.boneLifetimeSec }
+      config: { boneLifetimeSec: next.boneLifetimeSec }
     })
     win?.webContents.send('config', next)
     return next
@@ -199,8 +201,8 @@ function registerIpc(): void {
     return fetchGiftCatalog(roomId, loadConfig().sessdata)
   })
 
-  ipcMain.handle('test:gift', (_event, size?: BoneSize) => {
-    return sendTestGift(size)
+  ipcMain.handle('test:gift', (_event, ruleId?: string) => {
+    return sendTestGift(ruleId)
   })
 
   ipcMain.handle('overlay:clients', () => server?.clientCount() ?? 0)
@@ -248,7 +250,6 @@ async function restartServer(port: number): Promise<void> {
   }
   server = new OverlayServer(rendererDir)
   server.setConfigProvider(() => ({
-    overlayScale: loadConfig().overlayScale,
     boneLifetimeSec: loadConfig().boneLifetimeSec
   }))
   const actual = await server.start(port)

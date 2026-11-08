@@ -1,18 +1,12 @@
 import { Application, Container, Sprite, Text, type Ticker } from 'pixi.js'
 import RAPIER from '@dimforge/rapier2d-compat'
-import type { BoneSize, GiftEvent } from '../../../shared/types'
+import type { GiftEvent } from '../../../shared/types'
 import { createBoneTexture, createBowlTextures } from './sprites'
 
 const DESIGN_W = 1920
 const DESIGN_H = 1080
 const BOWL = { x: 960, y: 840 }
 const MAX_BONES = 100
-
-const SIZE_SCALE: Record<BoneSize, number> = {
-  small: 0.76,
-  medium: 1,
-  large: 1.34
-}
 
 interface Bone {
   body: RAPIER.RigidBody
@@ -24,7 +18,7 @@ interface Bone {
 interface PendingBone {
   at: number
   x: number
-  size: BoneSize
+  scale: number
 }
 
 interface FloatingLabel {
@@ -82,7 +76,6 @@ export class BoneScene {
   private pending: PendingBone[] = []
   private labels: FloatingLabel[] = []
   private accumulator = 0
-  private scaleFactor = 1
   private lifetimeMs = 0
   private lastWidth = 0
   private lastHeight = 0
@@ -141,10 +134,6 @@ export class BoneScene {
 
   private boneTexture!: import('pixi.js').Texture
 
-  setOverlayScale(scale: number): void {
-    this.scaleFactor = Math.min(1.8, Math.max(0.5, scale))
-  }
-
   /** 0 表示一直保留，直到达到骨头数量上限 */
   setBoneLifetime(seconds: number): void {
     this.lifetimeMs = Math.max(0, seconds * 1000)
@@ -153,23 +142,24 @@ export class BoneScene {
   drop(event: GiftEvent): void {
     if (!this.world) return
     const now = performance.now()
+    const scale = Math.min(2, Math.max(0.5, event.scale || 1))
     const label =
       event.uname && event.uname !== '观众'
         ? `${event.uname} 投喂 ${event.giftName}`
         : `投喂 ${event.giftName}`
-    this.spawnLabel(label, event.size)
+    this.spawnLabel(label, scale)
     for (let i = 0; i < event.bones; i += 1) {
       const x = BOWL.x + (Math.random() * 2 - 1) * 200
-      this.pending.push({ at: now + i * 95, x, size: event.size })
+      this.pending.push({ at: now + i * 95, x, scale })
     }
   }
 
-  private spawnLabel(text: string, size: BoneSize): void {
+  private spawnLabel(text: string, scale: number): void {
     const view = new Text({
       text,
       style: {
         fontFamily: 'Geist Variable, Microsoft YaHei, sans-serif',
-        fontSize: size === 'large' ? 32 : 27,
+        fontSize: Math.min(34, Math.max(24, Math.round(27 + (scale - 1) * 10))),
         fontWeight: '500',
         fill: '#fff7e6',
         stroke: { color: '#2c2418', width: 6 },
@@ -183,8 +173,7 @@ export class BoneScene {
     this.labels.push({ view, age: 0, life: 1700, baseY })
   }
 
-  private spawnBone(x: number, size: BoneSize, now: number): void {
-    const scale = SIZE_SCALE[size] * this.scaleFactor
+  private spawnBone(x: number, scale: number, now: number): void {
     const radius = 23 * scale
     const halfHeight = 42 * scale
 
@@ -242,7 +231,7 @@ export class BoneScene {
 
     while (this.pending.length > 0 && this.pending[0].at <= now) {
       const next = this.pending.shift()
-      if (next) this.spawnBone(next.x, next.size, now)
+      if (next) this.spawnBone(next.x, next.scale, now)
     }
 
     this.accumulator += dt

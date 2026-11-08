@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { BoneSize, GiftEvent } from '../../../shared/types'
+import type { GiftEvent } from '../../../shared/types'
 import { BoneScene } from './game'
 
 const TEST_NAMES = ['月见里的兔子', '芥末章鱼烧', '半糖去冰', '麦田里的收音机']
-const TEST_SIZES: BoneSize[] = ['small', 'medium', 'large']
+const TEST_SCALES = [0.8, 1, 1.3]
 
 export function OverlayPage(): React.JSX.Element {
   const mountRef = useRef<HTMLDivElement>(null)
@@ -54,13 +54,10 @@ export function OverlayPage(): React.JSX.Element {
           const payload = JSON.parse(String(event.data)) as {
             type?: string
             gift?: GiftEvent
-            config?: { overlayScale?: number; boneLifetimeSec?: number }
+            config?: { boneLifetimeSec?: number }
           }
           if (payload.type === 'gift' && payload.gift) handleGift(payload.gift)
           if (payload.type === 'config') {
-            if (typeof payload.config?.overlayScale === 'number') {
-              scene.setOverlayScale(payload.config.overlayScale)
-            }
             if (typeof payload.config?.boneLifetimeSec === 'number') {
               scene.setBoneLifetime(payload.config.boneLifetimeSec)
             }
@@ -102,7 +99,7 @@ export function OverlayPage(): React.JSX.Element {
         if (testMode) {
           let tick = 0
           const timer = window.setInterval(() => {
-            const size = TEST_SIZES[tick % TEST_SIZES.length]
+            const scale = TEST_SCALES[tick % TEST_SCALES.length]
             const name = TEST_NAMES[tick % TEST_NAMES.length]
             tick += 1
             handleGift({
@@ -111,8 +108,8 @@ export function OverlayPage(): React.JSX.Element {
               uid: 1000 + tick,
               uname: name,
               num: 1,
-              bones: size === 'large' ? 5 : size === 'medium' ? 3 : 2,
-              size,
+              bones: scale > 1.2 ? 5 : scale < 0.9 ? 2 : 3,
+              scale,
               timestamp: Date.now()
             })
           }, 1500)
