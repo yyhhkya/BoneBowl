@@ -69,6 +69,8 @@ function createWindow(): void {
 }
 
 function emitStatus(status: RoomStatus): void {
+  // startClient 与 LiveClient 都会报告 connecting，同一状态只广播一次
+  if (JSON.stringify(status) === JSON.stringify(lastStatus)) return
   lastStatus = status
   console.log(`[status] ${JSON.stringify(status)}`)
   win?.webContents.send('status', status)
