@@ -218,7 +218,20 @@ const mockApi: BoneBowlAPI = {
     window.open(url, '_blank', 'noopener')
   },
   copyText: async (text) => {
-    await navigator.clipboard.writeText(text)
+    try {
+      await navigator.clipboard.writeText(text)
+      return
+    } catch {
+      const input = document.createElement('textarea')
+      input.value = text
+      input.style.position = 'fixed'
+      input.style.opacity = '0'
+      document.body.appendChild(input)
+      input.select()
+      const ok = document.execCommand('copy')
+      input.remove()
+      if (!ok) throw new Error('copy failed')
+    }
   },
   qrLogin: async () => {
     const response = await fetch('/bili-passport/x/passport-login/web/qrcode/generate')

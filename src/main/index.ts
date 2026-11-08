@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, clipboard, ipcMain, shell } from 'electron'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { loadConfig, saveConfig } from './config'
@@ -238,6 +238,10 @@ function registerIpc(): void {
   ipcMain.handle('external:open', (_event, url: string) => {
     if (/^https?:\/\//i.test(url)) return shell.openExternal(url)
     return Promise.resolve()
+  })
+
+  ipcMain.handle('clipboard:write', (_event, text: string) => {
+    clipboard.writeText(String(text ?? ''))
   })
 
   ipcMain.handle('login:qrcode', () => generateQrLogin())
