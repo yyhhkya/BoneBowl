@@ -34,7 +34,10 @@ const api: BoneBowlAPI = {
     return () => ipcRenderer.removeListener('status', listener)
   },
   onGift: (cb: (gift: GiftEvent) => void) => {
-    const listener = (_event: Electron.IpcRendererEvent, gift: GiftEvent): void => cb(gift)
+    const listener = (_event: Electron.IpcRendererEvent, gift: GiftEvent): void => {
+      cb(gift)
+      ipcRenderer.send('gift:seen', { giftName: gift.giftName })
+    }
     ipcRenderer.on('gift', listener)
     return () => ipcRenderer.removeListener('gift', listener)
   },

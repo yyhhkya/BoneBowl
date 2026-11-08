@@ -222,6 +222,10 @@ function registerIpc(): void {
 
   ipcMain.handle('app:info', () => appInfo())
 
+  ipcMain.on('gift:seen', (_event, info?: { giftName?: string }) => {
+    console.log(`[gift] 设置窗口已收到并渲染「${info?.giftName ?? '?'}」`)
+  })
+
   ipcMain.handle('overlay:open', () => {
     const url = new URL(overlayUrl())
     url.searchParams.set('source', 'preview')
