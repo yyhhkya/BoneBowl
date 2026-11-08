@@ -1,7 +1,9 @@
 import { app, BrowserWindow } from 'electron'
-import { autoUpdater } from 'electron-updater'
+import electronUpdater from 'electron-updater'
 import { loadConfig } from './config'
 import type { UpdateStatus } from '../shared/types'
+
+const { autoUpdater } = electronUpdater
 
 let status: UpdateStatus = { state: 'idle' }
 let wired = false
