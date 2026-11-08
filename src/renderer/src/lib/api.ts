@@ -17,11 +17,34 @@ function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T
 }
 
-let mockConfig: AppConfig = {
-  ...clone(DEFAULT_CONFIG),
-  roomId: null,
-  gifts: []
+const MOCK_CONFIG_KEY = 'bonebowl:mock-config'
+
+function loadMockConfig(): AppConfig {
+  const fallback: AppConfig = { ...clone(DEFAULT_CONFIG), roomId: null, gifts: [] }
+  try {
+    const raw = window.localStorage.getItem(MOCK_CONFIG_KEY)
+    if (!raw) return fallback
+    const parsed = JSON.parse(raw) as Partial<AppConfig>
+    return {
+      ...fallback,
+      ...parsed,
+      roomId: typeof parsed.roomId === 'number' && parsed.roomId > 0 ? parsed.roomId : null,
+      gifts: Array.isArray(parsed.gifts) ? parsed.gifts : []
+    }
+  } catch {
+    return fallback
+  }
 }
+
+function persistMockConfig(): void {
+  try {
+    window.localStorage.setItem(MOCK_CONFIG_KEY, JSON.stringify(mockConfig))
+  } catch {
+    // 存储不可用时只保留在内存里
+  }
+}
+
+let mockConfig: AppConfig = loadMockConfig()
 let mockStatus: RoomStatus = { state: 'idle' }
 const statusListeners = new Set<(s: RoomStatus) => void>()
 const giftListeners = new Set<(g: GiftEvent) => void>()
@@ -70,6 +93,7 @@ const mockApi: BoneBowlAPI = {
   getConfig: async () => clone(mockConfig),
   saveConfig: async (patch) => {
     mockConfig = { ...mockConfig, ...patch } as AppConfig
+    persistMockConfig()
     configListeners.forEach((cb) => cb(clone(mockConfig)))
     return clone(mockConfig)
   },
@@ -79,6 +103,7 @@ const mockApi: BoneBowlAPI = {
     const sessdata = (opts?.sessdata ?? mockConfig.sessdata).trim()
     if (!sessdata) throw new Error('连接直播间需要先扫码登录 B站账号')
     mockConfig.roomId = roomId
+    persistMockConfig()
     emitStatus({ state: 'connecting', roomId })
     await delay(900)
     emitStatus({ state: 'connected', roomId, realRoomId: roomId })
@@ -128,6 +153,7 @@ const mockApi: BoneBowlAPI = {
     if (mockQrPolls <= 1) return { state: 'waiting', message: '等待扫码' }
     if (mockQrPolls === 2) return { state: 'scanned', message: '已扫码，在手机上确认' }
     mockConfig.sessdata = 'mock-SESSDATA'
+    persistMockConfig()
     return { state: 'success', sessdata: 'mock-SESSDATA', uname: '月见里的兔子', uid: 60861121 }
   },
   onStatus: (cb) => {

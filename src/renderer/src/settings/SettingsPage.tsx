@@ -123,6 +123,21 @@ export function SettingsPage(): React.JSX.Element {
   )
 
   useEffect(() => {
+    const flush = (): void => {
+      void flushSave()
+    }
+    const onVisibility = (): void => {
+      if (document.visibilityState === 'hidden') flush()
+    }
+    window.addEventListener('pagehide', flush)
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      window.removeEventListener('pagehide', flush)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [flushSave])
+
+  useEffect(() => {
     let alive = true
     Promise.all([api.getConfig(), api.getInfo(), api.getStatus()])
       .then(([nextConfig, nextInfo, nextStatus]) => {
@@ -524,8 +539,11 @@ export function SettingsPage(): React.JSX.Element {
                     inputMode="numeric"
                     placeholder="例如 30866874"
                     onChange={(event) => {
-                      setRoomIdText(event.target.value.replace(/\D/g, '').slice(0, 12))
+                      const digits = event.target.value.replace(/\D/g, '').slice(0, 12)
+                      setRoomIdText(digits)
                       setRoomError(null)
+                      const value = Number(digits)
+                      scheduleSave({ roomId: Number.isInteger(value) && value > 0 ? value : null })
                     }}
                     onBlur={commitRoomId}
                     onKeyDown={(event) => {
@@ -943,7 +961,7 @@ export function SettingsPage(): React.JSX.Element {
 
           <footer className="mt-20 flex flex-col gap-3 border-t border-line pt-6 text-[11px] text-ink-soft sm:flex-row sm:items-center sm:justify-between">
             <span>
-              BoneBowl v{info.version} · 数据只在本机 · 端口 {info.port}
+              BoneBowl v{info.version} · 更改自动保存在本机 · 端口 {info.port}
             </span>
             <button
               type="button"
