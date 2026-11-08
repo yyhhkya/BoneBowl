@@ -178,7 +178,10 @@ function sendTestGift(ruleId?: string): number {
 }
 
 function registerIpc(): void {
-  ipcMain.handle('config:get', () => loadConfig())
+  ipcMain.handle('config:get', () => {
+    console.log('[ipc] 设置页读取配置')
+    return loadConfig()
+  })
 
   ipcMain.handle('config:save', async (_event, patch: Partial<AppConfig>) => {
     const before = loadConfig()

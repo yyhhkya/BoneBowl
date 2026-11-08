@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, clipboard } from 'electron'
+import electron, { contextBridge, ipcRenderer } from 'electron'
 import type {
   AppConfig,
   BoneBowlAPI,
@@ -22,7 +22,7 @@ const api: BoneBowlAPI = {
   openOverlay: () => ipcRenderer.invoke('overlay:open'),
   openExternal: (url: string) => ipcRenderer.invoke('external:open', url),
   copyText: (text: string) => {
-    clipboard.writeText(text)
+    electron.clipboard.writeText(text)
     return Promise.resolve()
   },
   qrLogin: () => ipcRenderer.invoke('login:qrcode') as Promise<QrLoginInfo>,
