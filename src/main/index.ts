@@ -27,8 +27,10 @@ let lastStatus: RoomStatus = { state: 'idle' }
 
 function overlayUrl(): string {
   const devUrl = process.env['ELECTRON_RENDERER_URL']
-  if (devUrl) return `${devUrl.replace(/\/$/, '')}/overlay?ws=${server?.port ?? loadConfig().port}`
-  return `http://127.0.0.1:${server?.port ?? loadConfig().port}/overlay`
+  if (devUrl) {
+    return `${devUrl.replace(/\/$/, '')}/overlay?ws=${server?.port ?? loadConfig().port}&source=obs`
+  }
+  return `http://127.0.0.1:${server?.port ?? loadConfig().port}/overlay?source=obs`
 }
 
 function appInfo(): AppInfo {
@@ -142,7 +144,7 @@ function handleGift(data: SendGiftData): void {
   }
   const sent = server?.broadcast({ type: 'gift', gift: event }) ?? 0
   console.log(
-    `[gift] 广播到 ${sent} 个叠加层连接${win ? '，并推送到设置窗口' : '，设置窗口不存在'}`
+    `[gift] 广播到 ${sent} 个叠加层连接；设置窗口：${win?.webContents.getURL() || '不存在'}`
   )
   win?.webContents.send('gift', event)
 }
@@ -220,7 +222,11 @@ function registerIpc(): void {
 
   ipcMain.handle('app:info', () => appInfo())
 
-  ipcMain.handle('overlay:open', () => shell.openExternal(overlayUrl()))
+  ipcMain.handle('overlay:open', () => {
+    const url = new URL(overlayUrl())
+    url.searchParams.set('source', 'preview')
+    return shell.openExternal(url.toString())
+  })
 
   ipcMain.handle('external:open', (_event, url: string) => {
     if (/^https?:\/\//i.test(url)) return shell.openExternal(url)

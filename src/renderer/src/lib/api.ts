@@ -192,7 +192,7 @@ const mockApi: BoneBowlAPI = {
         const port = Number(info.port) || 17800
         return {
           port,
-          overlayUrl: `${window.location.origin}/overlay?ws=${port}`,
+          overlayUrl: `${window.location.origin}/overlay?ws=${port}&source=obs`,
           version: '0.1.0',
           isDev: true
         }
@@ -202,15 +202,17 @@ const mockApi: BoneBowlAPI = {
     }
     return {
       port: Number(window.location.port) || 17800,
-      overlayUrl: `${window.location.origin}/overlay`,
+      overlayUrl: `${window.location.origin}/overlay?source=obs`,
       version: '0.1.0',
       isDev: true
     }
   },
   openOverlay: async () => {
     const info = await mockApi.getInfo()
-    const joiner = info.overlayUrl.includes('?') ? '&' : '?'
-    window.open(`${info.overlayUrl}${joiner}test=1`, '_blank')
+    const url = new URL(info.overlayUrl)
+    url.searchParams.set('source', 'preview')
+    url.searchParams.set('test', '1')
+    window.open(url.toString(), '_blank')
   },
   openExternal: async (url) => {
     window.open(url, '_blank', 'noopener')

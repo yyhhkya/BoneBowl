@@ -65,9 +65,29 @@ export class OverlayServer {
           socket.on('error', () => socket.terminate())
           socket.on('message', (raw) => {
             try {
-              const payload = JSON.parse(String(raw)) as { type?: string; href?: string }
+              const payload = JSON.parse(String(raw)) as {
+                type?: string
+                href?: string
+                source?: string
+                giftName?: string
+                bones?: number
+                error?: string
+              }
               if (payload.type === 'ready') {
-                console.log(`[overlay] 页面就绪：${payload.href ?? '(未知地址)'}`)
+                console.log(
+                  `[overlay] 页面就绪（${payload.source || '未知来源'}）：${payload.href ?? '(未知地址)'}`
+                )
+              }
+              if (payload.type === 'gift-ack') {
+                if (payload.error) {
+                  console.log(
+                    `[overlay] 处理礼物「${payload.giftName ?? '?'}」出错：${payload.error}`
+                  )
+                } else {
+                  console.log(
+                    `[overlay] 已处理礼物「${payload.giftName ?? '?'}」，生成 ${payload.bones ?? '?'} 根`
+                  )
+                }
               }
             } catch {
               // 忽略非 JSON 消息

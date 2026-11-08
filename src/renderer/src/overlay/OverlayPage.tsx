@@ -35,7 +35,20 @@ export function OverlayPage(): React.JSX.Element {
     let channel: BroadcastChannel | null = null
 
     const handleGift = (gift: GiftEvent): void => {
-      void scene.drop(gift)
+      try {
+        void scene.drop(gift)
+        socket?.send(
+          JSON.stringify({ type: 'gift-ack', giftName: gift.giftName, bones: gift.bones })
+        )
+      } catch (error) {
+        socket?.send(
+          JSON.stringify({
+            type: 'gift-ack',
+            giftName: gift.giftName,
+            error: error instanceof Error ? error.message : String(error)
+          })
+        )
+      }
     }
 
     const connectSocket = (): void => {
@@ -48,7 +61,13 @@ export function OverlayPage(): React.JSX.Element {
       }
       socket.onopen = () => {
         if (!cancelled) setSocketReady(true)
-        socket?.send(JSON.stringify({ type: 'ready', href: window.location.href }))
+        socket?.send(
+          JSON.stringify({
+            type: 'ready',
+            href: window.location.href,
+            source: params.get('source') ?? ''
+          })
+        )
       }
       socket.onmessage = (event) => {
         try {
