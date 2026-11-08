@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path'
 import type { Plugin, ViteDevServer } from 'vite'
 import { normalizeConfig } from './src/shared/config'
 import { DEFAULT_CONFIG, type AppConfig } from './src/shared/types'
+import { refreshLoginIfNeeded } from './src/main/bilibili/refresh'
 
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
@@ -108,16 +109,39 @@ export function devApiPlugin(): Plugin {
             )
             const json = (await upstream.json()) as Record<string, unknown>
             let sessdata = ''
+            let biliJct = ''
             for (const cookie of upstream.headers.getSetCookie()) {
               const first = cookie.split(';')[0]?.trim() ?? ''
               if (first.startsWith('SESSDATA=')) {
                 sessdata = first.slice('SESSDATA='.length)
-                break
+              } else if (first.startsWith('bili_jct=')) {
+                biliJct = first.slice('bili_jct='.length)
               }
             }
-            sendJson(res, upstream.status, { ...json, sessdata })
+            const refreshToken =
+              (json.data as { refresh_token?: string } | undefined)?.refresh_token ?? ''
+            sendJson(res, upstream.status, { ...json, sessdata, biliJct, refreshToken })
           } catch {
             sendJson(res, 502, { code: -1, message: '轮询请求失败' })
+          }
+          return
+        }
+
+        if (url.pathname === '/bili-refresh' && req.method === 'POST') {
+          try {
+            const body = JSON.parse((await readBody(req)) || '{}') as {
+              sessdata?: string
+              biliJct?: string
+              refreshToken?: string
+            }
+            const refreshed = await refreshLoginIfNeeded({
+              sessdata: body.sessdata ?? '',
+              biliJct: body.biliJct ?? '',
+              refreshToken: body.refreshToken ?? ''
+            })
+            sendJson(res, 200, refreshed ? writeConfig(refreshed) : null)
+          } catch {
+            sendJson(res, 500, null)
           }
           return
         }

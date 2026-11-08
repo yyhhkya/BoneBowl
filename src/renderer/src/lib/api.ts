@@ -184,6 +184,8 @@ const mockApi: BoneBowlAPI = {
     const json = (await response.json()) as {
       code?: number
       sessdata?: string
+      biliJct?: string
+      refreshToken?: string
       data?: { code?: number; message?: string }
     }
     if (json.code !== 0) return { state: 'error', message: '轮询失败，请刷新二维码' }
@@ -194,9 +196,13 @@ const mockApi: BoneBowlAPI = {
     if (status !== 0) return { state: 'error', message: json.data?.message || '未知状态' }
     const sessdata = (json.sessdata ?? '').trim()
     if (!sessdata) return { state: 'error', message: '登录成功，但没有取到 SESSDATA' }
+    const biliJct = (json.biliJct ?? '').trim()
+    const refreshToken = (json.refreshToken ?? '').trim()
     mockConfig.sessdata = sessdata
+    mockConfig.biliJct = biliJct
+    mockConfig.refreshToken = refreshToken
     try {
-      await saveMockConfig({ sessdata })
+      await saveMockConfig({ sessdata, biliJct, refreshToken })
     } catch {
       // 配置写入失败不影响本次登录结果
     }
@@ -206,8 +212,27 @@ const mockApi: BoneBowlAPI = {
     return { state: 'success', sessdata, uname: nav?.data?.uname, uid: nav?.data?.mid }
   },
   verifyLogin: async (): Promise<LoginCheck> => {
-    const sessdata = mockConfig.sessdata.trim()
+    let sessdata = mockConfig.sessdata.trim()
     if (!sessdata) return { state: 'none', message: '还没有登录' }
+    if (sessdata !== 'mock-SESSDATA' && mockConfig.refreshToken) {
+      try {
+        const refreshed = (await fetch('/bili-refresh', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessdata,
+            biliJct: mockConfig.biliJct,
+            refreshToken: mockConfig.refreshToken
+          })
+        }).then((res) => res.json())) as AppConfig | null
+        if (refreshed) {
+          mockConfig = refreshed
+          sessdata = mockConfig.sessdata.trim()
+        }
+      } catch {
+        // 续期失败时继续用现有 Cookie 校验
+      }
+    }
     if (sessdata === 'mock-SESSDATA') {
       return { state: 'valid', message: '预览占位会话' }
     }

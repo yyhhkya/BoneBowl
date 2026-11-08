@@ -20,7 +20,12 @@ interface GenerateResponse {
 interface PollResponse {
   code: number
   message?: string
-  data?: { code?: number; message?: string; url?: string; timestamp?: number }
+  data?: { code?: number; message?: string; url?: string; timestamp?: number; refresh_token?: string }
+}
+
+export interface QrLoginResult extends QrLoginPoll {
+  biliJct?: string
+  refreshToken?: string
 }
 
 function readSetCookies(response: Response): string[] {
@@ -73,7 +78,7 @@ export async function verifyLogin(sessdata: string): Promise<LoginCheck> {
   }
 }
 
-export async function pollQrLogin(key: string): Promise<QrLoginPoll> {
+export async function pollQrLogin(key: string): Promise<QrLoginResult> {
   const response = await fetch(
     `https://passport.bilibili.com/x/passport-login/web/qrcode/poll?qrcode_key=${encodeURIComponent(key)}`,
     { headers: PASSPORT_HEADERS }
@@ -91,11 +96,13 @@ export async function pollQrLogin(key: string): Promise<QrLoginPoll> {
 
   const cookies = readSetCookies(response)
   let sessdata = ''
+  let biliJct = ''
   for (const cookie of cookies) {
     const first = cookie.split(';')[0]?.trim() ?? ''
     if (first.startsWith('SESSDATA=')) {
       sessdata = first.slice('SESSDATA='.length)
-      break
+    } else if (first.startsWith('bili_jct=')) {
+      biliJct = first.slice('bili_jct='.length)
     }
   }
   if (!sessdata) return { state: 'error', message: '登录成功，但没有取到 SESSDATA' }
@@ -103,5 +110,12 @@ export async function pollQrLogin(key: string): Promise<QrLoginPoll> {
   if (check.state === 'invalid') {
     return { state: 'error', message: '登录校验未通过，请重新扫码' }
   }
-  return { state: 'success', sessdata, uname: check.uname, uid: check.uid }
+  return {
+    state: 'success',
+    sessdata,
+    uname: check.uname,
+    uid: check.uid,
+    biliJct,
+    refreshToken: json.data?.refresh_token ?? ''
+  }
 }

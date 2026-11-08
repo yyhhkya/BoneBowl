@@ -5,6 +5,8 @@ export function normalizeConfig(raw: Partial<AppConfig>): AppConfig {
   return {
     roomId: typeof raw.roomId === 'number' && raw.roomId > 0 ? raw.roomId : null,
     sessdata: typeof raw.sessdata === 'string' ? raw.sessdata.trim() : '',
+    biliJct: typeof raw.biliJct === 'string' ? raw.biliJct.trim() : '',
+    refreshToken: typeof raw.refreshToken === 'string' ? raw.refreshToken.trim() : '',
     autoConnect: raw.autoConnect === true,
     port: Number.isInteger(raw.port) && raw.port! >= 1024 && raw.port! <= 65535 ? raw.port! : DEFAULT_CONFIG.port,
     overlayScale: typeof raw.overlayScale === 'number' && raw.overlayScale > 0 ? raw.overlayScale : 1,

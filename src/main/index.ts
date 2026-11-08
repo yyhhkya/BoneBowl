@@ -6,6 +6,7 @@ import { OverlayServer } from './server'
 import { LiveClient, type SendGiftData } from './bilibili/client'
 import { fetchGiftCatalog, resetLoginCache } from './bilibili/api'
 import { generateQrLogin, pollQrLogin, verifyLogin } from './bilibili/login'
+import { refreshLoginIfNeeded } from './bilibili/refresh'
 import type {
   AppConfig,
   AppInfo,
@@ -79,10 +80,16 @@ function stopClient(): void {
   liveClient = null
 }
 
+async function refreshSessionIfNeeded(): Promise<AppConfig> {
+  const current = loadConfig()
+  const refreshed = await refreshLoginIfNeeded(current)
+  return refreshed ? saveConfig(refreshed) : current
+}
+
 async function startClient(opts: { roomId?: number | null; sessdata?: string } = {}): Promise<RoomStatus> {
-  const config = loadConfig()
+  const config = await refreshSessionIfNeeded()
   const roomId = opts.roomId ?? config.roomId
-  const sessdata = (opts.sessdata ?? config.sessdata).trim()
+  const sessdata = (config.sessdata || opts.sessdata || '').trim()
   if (!roomId) {
     emitStatus({ state: 'error', message: '还没有填写直播间号' })
     return lastStatus
@@ -203,16 +210,29 @@ function registerIpc(): void {
 
   ipcMain.handle('login:qrcode', () => generateQrLogin())
 
-  ipcMain.handle('login:verify', () => verifyLogin(loadConfig().sessdata))
+  ipcMain.handle('login:verify', async () => {
+    const config = await refreshSessionIfNeeded()
+    return verifyLogin(config.sessdata)
+  })
 
   ipcMain.handle('login:poll', async (_event, key: string) => {
     const result = await pollQrLogin(key)
     if (result.state === 'success' && result.sessdata) {
       resetLoginCache()
-      const next = saveConfig({ sessdata: result.sessdata })
+      const next = saveConfig({
+        sessdata: result.sessdata,
+        ...(result.biliJct ? { biliJct: result.biliJct } : {}),
+        ...(result.refreshToken ? { refreshToken: result.refreshToken } : {})
+      })
       win?.webContents.send('config', next)
     }
-    return result
+    return {
+      state: result.state,
+      message: result.message,
+      sessdata: result.sessdata,
+      uname: result.uname,
+      uid: result.uid
+    }
   })
 }
 

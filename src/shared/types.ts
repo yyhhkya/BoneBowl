@@ -12,6 +12,8 @@ export interface GiftRule {
 export interface AppConfig {
   roomId: number | null
   sessdata: string
+  biliJct: string
+  refreshToken: string
   autoConnect: boolean
   port: number
   overlayScale: number
@@ -107,6 +109,8 @@ export const SIZE_LABEL: Record<BoneSize, string> = {
 export const DEFAULT_CONFIG: AppConfig = {
   roomId: null,
   sessdata: '',
+  biliJct: '',
+  refreshToken: '',
   autoConnect: false,
   port: 17800,
   overlayScale: 1,
