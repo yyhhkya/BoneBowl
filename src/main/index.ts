@@ -144,7 +144,7 @@ function pickTestRule(): GiftRule {
   return enabled[0] ?? { id: 'test', giftId: 0, name: '测试骨头', bones: 1, size, enabled: true }
 }
 
-function sendTestGift(size?: BoneSize): void {
+function sendTestGift(size?: BoneSize): number {
   const rule = pickTestRule()
   const event: GiftEvent = {
     giftId: rule.giftId,
@@ -156,8 +156,10 @@ function sendTestGift(size?: BoneSize): void {
     size: size ?? rule.size,
     timestamp: Date.now()
   }
-  server?.broadcast({ type: 'gift', gift: event })
+  const sent = server?.broadcast({ type: 'gift', gift: event }) ?? 0
+  console.log(`[test] 试投 ${event.giftName}，叠加层连接数 ${sent}`)
   win?.webContents.send('gift', event)
+  return sent
 }
 
 function registerIpc(): void {
@@ -198,8 +200,10 @@ function registerIpc(): void {
   })
 
   ipcMain.handle('test:gift', (_event, size?: BoneSize) => {
-    sendTestGift(size)
+    return sendTestGift(size)
   })
+
+  ipcMain.handle('overlay:clients', () => server?.clientCount() ?? 0)
 
   ipcMain.handle('app:info', () => appInfo())
 

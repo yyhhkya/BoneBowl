@@ -110,12 +110,26 @@ export class OverlayServer {
     }
   }
 
-  broadcast(payload: unknown): void {
-    if (!this.wss) return
+  broadcast(payload: unknown): number {
+    if (!this.wss) return 0
     const text = JSON.stringify(payload)
+    let sent = 0
     for (const client of this.wss.clients) {
-      if (client.readyState === WebSocket.OPEN) client.send(text)
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(text)
+        sent += 1
+      }
     }
+    return sent
+  }
+
+  clientCount(): number {
+    if (!this.wss) return 0
+    let count = 0
+    for (const client of this.wss.clients) {
+      if (client.readyState === WebSocket.OPEN) count += 1
+    }
+    return count
   }
 
   async stop(): Promise<void> {

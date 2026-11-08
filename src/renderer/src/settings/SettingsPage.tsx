@@ -85,6 +85,7 @@ export function SettingsPage(): React.JSX.Element {
   const [qrMessage, setQrMessage] = useState('等待扫码')
   const [qrBusy, setQrBusy] = useState(false)
   const [loginCheck, setLoginCheck] = useState<LoginCheck | null>(null)
+  const [overlayClients, setOverlayClients] = useState(0)
   const [pickerOpen, setPickerOpen] = useState(false)
 
   const pendingRef = useRef<Partial<AppConfig>>({})
@@ -162,6 +163,26 @@ export function SettingsPage(): React.JSX.Element {
       alive = false
     }
   }, [sessdata])
+
+  useEffect(() => {
+    let alive = true
+    const tick = (): void => {
+      api
+        .getOverlayClients()
+        .then((count) => {
+          if (alive) setOverlayClients(count)
+        })
+        .catch(() => {
+          if (alive) setOverlayClients(0)
+        })
+    }
+    tick()
+    const timer = window.setInterval(tick, 3000)
+    return () => {
+      alive = false
+      window.clearInterval(timer)
+    }
+  }, [])
 
   useEffect(() => {
     let alive = true
@@ -270,6 +291,23 @@ export function SettingsPage(): React.JSX.Element {
       setBusy(null)
     }
   }, [roomIdText, sessdata, loginCheck?.state, pushToast])
+
+  const handleTestGift = useCallback(
+    async (size: BoneSize) => {
+      try {
+        const clients = await api.testGift(size)
+        setOverlayClients(clients)
+        if (clients > 0) {
+          pushToast(`已试投，叠加层已连接（${clients}）`)
+        } else {
+          pushToast('已试投，但还没有叠加层连上：检查 OBS 浏览器源地址和端口', 'error')
+        }
+      } catch (error) {
+        pushToast(error instanceof Error ? error.message : '试投失败', 'error')
+      }
+    },
+    [pushToast]
+  )
 
   const handleDisconnect = useCallback(async () => {
     setBusy('connect')
@@ -965,7 +1003,18 @@ export function SettingsPage(): React.JSX.Element {
                       <Flask size={15} className="text-ember" />
                       试投
                     </div>
-                    <span className="text-[11px] text-ink-soft">直接触发一只骨头</span>
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] ${
+                        overlayClients > 0 ? 'bg-moss/10 text-moss' : 'bg-clay/8 text-clay'
+                      }`}
+                    >
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          overlayClients > 0 ? 'animate-breathe bg-moss' : 'bg-clay'
+                        }`}
+                      />
+                      {overlayClients > 0 ? `OBS 已连接 ${overlayClients}` : 'OBS 未连接'}
+                    </span>
                   </div>
                   <div className="mt-3 grid grid-cols-3 gap-2">
                     {SIZES.map((size: BoneSize) => (
@@ -973,12 +1022,15 @@ export function SettingsPage(): React.JSX.Element {
                         key={size}
                         variant="ghost"
                         className="!py-2"
-                        onClick={() => void api.testGift(size)}
+                        onClick={() => void handleTestGift(size)}
                       >
                         投一根{SIZE_LABEL[size]}
                       </Button>
                     ))}
                   </div>
+                  <p className="mt-2 text-[11px] leading-relaxed text-ink-soft">
+                    试投通过 WebSocket 推给叠加层；显示未连接时，检查 OBS 浏览器源地址和端口。
+                  </p>
                 </div>
               </div>
 

@@ -85,7 +85,8 @@ export interface BoneBowlAPI {
   disconnect: () => Promise<RoomStatus>
   getStatus: () => Promise<RoomStatus>
   fetchGifts: (roomId: number) => Promise<GiftCatalogItem[]>
-  testGift: (size?: BoneSize) => Promise<void>
+  testGift: (size?: BoneSize) => Promise<number>
+  getOverlayClients: () => Promise<number>
   getInfo: () => Promise<AppInfo>
   openOverlay: () => Promise<void>
   openExternal: (url: string) => Promise<void>

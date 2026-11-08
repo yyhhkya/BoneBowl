@@ -154,10 +154,23 @@ const mockApi: BoneBowlAPI = {
         body: JSON.stringify({ size: boneSize })
       })
       if (!response.ok) throw new Error('试投失败')
+      const result = (await response.json()) as { clients?: number }
       // 已经由叠加层服务通过 WebSocket 广播，这里只更新设置页的事件列表
       emitGift(boneSize, false)
+      return Number(result.clients) || 0
     } catch {
       emitGift(boneSize)
+      return 0
+    }
+  },
+  getOverlayClients: async () => {
+    try {
+      const response = await fetch('/dev-overlay-info')
+      if (!response.ok) return 0
+      const info = (await response.json()) as { clients?: number }
+      return Number(info.clients) || 0
+    } catch {
+      return 0
     }
   },
   getInfo: async (): Promise<AppInfo> => {

@@ -127,8 +127,8 @@ export function devApiPlugin(): Plugin {
 
         if (url.pathname === '/dev-overlay-info') {
           try {
-            const { port } = await ensureOverlayService()
-            sendJson(res, 200, { port })
+            const { server: overlay, port } = await ensureOverlayService()
+            sendJson(res, 200, { port, clients: overlay.clientCount() })
           } catch {
             sendJson(res, 500, { message: '叠加层服务启动失败' })
           }
@@ -141,8 +141,8 @@ export function devApiPlugin(): Plugin {
             const size: BoneSize =
               body.size === 'small' || body.size === 'large' ? body.size : 'medium'
             const { server: overlay, port } = await ensureOverlayService()
-            overlay.broadcast({ type: 'gift', gift: buildTestGift(size) })
-            sendJson(res, 200, { ok: true, port })
+            const clients = overlay.broadcast({ type: 'gift', gift: buildTestGift(size) })
+            sendJson(res, 200, { ok: true, port, clients })
           } catch {
             sendJson(res, 500, { message: '试投失败' })
           }
