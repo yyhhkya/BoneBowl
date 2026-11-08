@@ -142,7 +142,7 @@ export class BoneScene {
   drop(event: GiftEvent): void {
     if (!this.world) return
     const now = performance.now()
-    const scale = Math.min(2, Math.max(0.5, event.scale || 1))
+    const scale = Math.min(5, Math.max(0.5, event.scale || 1))
     const label =
       event.uname && event.uname !== '观众'
         ? `${event.uname} 投喂 ${event.giftName}`

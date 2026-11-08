@@ -3,7 +3,7 @@ import { DEFAULT_CONFIG, type AppConfig } from './types'
 const LEGACY_SIZE_SCALE: Record<string, number> = { small: 0.76, medium: 1, large: 1.34 }
 
 function clampScale(value: number): number {
-  return Math.min(2, Math.max(0.5, Math.round(value * 20) / 20))
+  return Math.min(5, Math.max(0.5, Math.round(value * 20) / 20))
 }
 
 /** 主进程与 dev 预览共用的配置归一化 */

@@ -44,7 +44,7 @@ export function GiftRow({
         <input
           type="range"
           min={0.5}
-          max={2}
+          max={5}
           step={0.05}
           value={rule.scale}
           aria-label={`${rule.name || '礼物'} 骨头大小`}
