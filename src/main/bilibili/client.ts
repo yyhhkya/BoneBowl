@@ -15,6 +15,89 @@ export interface SendGiftData {
   rnd?: string
   coin_type?: string
   total_coin?: number
+  price?: number
+}
+
+interface PbCursor {
+  i: number
+}
+
+function readVarint(buf: Buffer, cursor: PbCursor): number {
+  let result = 0
+  let shift = 0
+  for (;;) {
+    if (cursor.i >= buf.length) throw new Error('protobuf 数据不完整')
+    const byte = buf[cursor.i++]
+    result += (byte & 0x7f) * 2 ** shift
+    if ((byte & 0x80) === 0) break
+    shift += 7
+    if (shift > 63) throw new Error('protobuf varint 过长')
+  }
+  return result
+}
+
+function decodePbFields(buf: Buffer): Map<number, Array<number | Buffer>> {
+  const fields = new Map<number, Array<number | Buffer>>()
+  const cursor: PbCursor = { i: 0 }
+  while (cursor.i < buf.length) {
+    const key = readVarint(buf, cursor)
+    const field = key >> 3
+    const wire = key & 7
+    let value: number | Buffer
+    if (wire === 0) {
+      value = readVarint(buf, cursor)
+    } else if (wire === 2) {
+      const length = readVarint(buf, cursor)
+      value = buf.subarray(cursor.i, cursor.i + length)
+      cursor.i += length
+    } else if (wire === 1) {
+      cursor.i += 8
+      value = 0
+    } else if (wire === 5) {
+      cursor.i += 4
+      value = 0
+    } else {
+      throw new Error(`不支持的 protobuf wire type ${wire}`)
+    }
+    const list = fields.get(field) ?? []
+    list.push(value)
+    fields.set(field, list)
+  }
+  return fields
+}
+
+function pbNumber(fields: Map<number, Array<number | Buffer>>, n: number): number {
+  const value = fields.get(n)?.[0]
+  return typeof value === 'number' ? value : 0
+}
+
+function pbString(fields: Map<number, Array<number | Buffer>>, n: number): string {
+  const value = fields.get(n)?.[0]
+  return Buffer.isBuffer(value) ? value.toString('utf8') : ''
+}
+
+/** 解析 SEND_GIFT_V2 的 data.pb（SendGiftV2 protobuf） */
+function decodeSendGiftV2(pb: Buffer): SendGiftData[] {
+  const fields = decodePbFields(pb)
+  const uid = pbNumber(fields, 1)
+  const uname = pbString(fields, 2)
+  const gifts: SendGiftData[] = []
+  for (const item of fields.get(10) ?? []) {
+    if (!Buffer.isBuffer(item)) continue
+    const gift = decodePbFields(item)
+    gifts.push({
+      giftId: pbNumber(gift, 1),
+      giftName: pbString(gift, 2),
+      num: pbNumber(gift, 3) || 1,
+      price: pbNumber(gift, 5),
+      coin_type: pbString(gift, 8),
+      tid: pbString(gift, 9),
+      timestamp: pbNumber(gift, 10),
+      uid,
+      uname
+    })
+  }
+  return gifts
 }
 
 const OP_HEARTBEAT = 2
@@ -210,6 +293,40 @@ export class LiveClient extends EventEmitter {
       )
       this.attempts = 0
       this.emit('gift', data)
+      return
+    }
+    if (cmd === 'SEND_GIFT_V2') {
+      const data = (payload as { data?: { pb?: string } }).data
+      if (!data) return
+      if (typeof data.pb !== 'string') {
+        console.log(`[gift] SEND_GIFT_V2 缺少 pb 字段 ${JSON.stringify(data).slice(0, 800)}`)
+        return
+      }
+      try {
+        const gifts = decodeSendGiftV2(Buffer.from(data.pb, 'base64'))
+        if (gifts.length === 0) console.log('[gift] SEND_GIFT_V2 解码后没有礼物项')
+        for (const gift of gifts) {
+          if (this.isDuplicate(gift)) {
+            console.log(`[gift] 重复礼物已忽略 tid=${gift.tid ?? '-'}`)
+            continue
+          }
+          console.log(
+            `[gift] SEND_GIFT_V2 ${JSON.stringify({
+              giftId: gift.giftId,
+              giftName: gift.giftName,
+              num: gift.num,
+              price: gift.price,
+              coinType: gift.coin_type,
+              uname: gift.uname,
+              tid: gift.tid
+            })}`
+          )
+          this.attempts = 0
+          this.emit('gift', gift)
+        }
+      } catch (error) {
+        console.warn('[gift] SEND_GIFT_V2 解码失败', error)
+      }
       return
     }
     if (cmd === 'COMBO_SEND') {

@@ -70,6 +70,6 @@ src/
 
 ## 协议说明
 
-直播礼物走 B站信息流 WebSocket 的 `SEND_GIFT` 消息。2025 年 5 月起 `getDanmuInfo` 强制 Wbi 签名，并要求 Cookie 中有 `buvid3`；应用要求先扫码登录后再连接直播间，SESSDATA 保存在本机配置。实现细节参考 [bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)。
+直播礼物走 B站信息流 WebSocket，目前主要是 `SEND_GIFT_V2`（`data.pb` 为 protobuf，应用内置解码），旧版 `SEND_GIFT` 也兼容。2025 年 5 月起 `getDanmuInfo` 强制 Wbi 签名，并要求 Cookie 中有 `buvid3`；应用要求先扫码登录后再连接直播间，SESSDATA 保存在本机配置。实现细节参考 [bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)。
 
 该接口并非官方公开 API，账号或协议可能因风控变化失效。连接异常时应用会退避重连，并保留叠加层运行。
