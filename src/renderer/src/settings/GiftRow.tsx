@@ -11,7 +11,7 @@ export function GiftRow({
   onChange: (patch: Partial<GiftRule>) => void
   onRemove: () => void
 }): React.JSX.Element {
-  const invalid = !Number.isFinite(rule.giftId) || rule.giftId <= 0
+  const invalid = !rule.name.trim()
   return (
     <div
       className={`group grid gap-3 px-4 py-3.5 transition-colors hover:bg-white/55 sm:grid-cols-[minmax(0,1fr)_108px_132px_44px_32px] sm:items-center ${
@@ -19,27 +19,12 @@ export function GiftRow({
       }`}
     >
       <div className="flex min-w-0 items-center gap-2.5">
-        <div className="relative w-[86px] shrink-0">
-          <input
-            className={`field-input !px-2.5 !py-2 font-mono !text-[12.5px] tabular-nums ${
-              invalid ? '!border-clay/60' : ''
-            }`}
-            value={rule.giftId > 0 ? String(rule.giftId) : ''}
-            placeholder="ID"
-            aria-label="礼物 ID"
-            aria-invalid={invalid}
-            inputMode="numeric"
-            onChange={(event) => {
-              const digits = event.target.value.replace(/\D/g, '').slice(0, 10)
-              onChange({ giftId: digits ? Number(digits) : 0 })
-            }}
-          />
-        </div>
         <input
-          className="field-input min-w-0 flex-1 !py-2 !text-[13px]"
+          className={`field-input min-w-0 flex-1 !py-2 !text-[13px] ${invalid ? '!border-clay/60' : ''}`}
           value={rule.name}
           placeholder="礼物名称"
           aria-label="礼物名称"
+          aria-invalid={invalid}
           onChange={(event) => onChange({ name: event.target.value })}
         />
       </div>

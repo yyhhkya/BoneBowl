@@ -254,17 +254,21 @@ export function SettingsPage(): React.JSX.Element {
     (items: GiftCatalogItem[], notify = false) => {
       setConfig((prev) => {
         if (!prev) return prev
-        const existing = new Set(prev.gifts.filter((g) => g.giftId > 0).map((g) => g.giftId))
-        const additions = items
-          .filter((item) => !existing.has(item.id))
-          .map<GiftRule>((item) => ({
+        const existing = new Set(prev.gifts.map((g) => g.name.trim()).filter(Boolean))
+        const additions: GiftRule[] = []
+        for (const item of items) {
+          const name = item.name.trim()
+          if (!name || existing.has(name)) continue
+          existing.add(name)
+          additions.push({
             id: crypto.randomUUID(),
             giftId: item.id,
-            name: item.name,
+            name,
             bones: 1,
             size: 'medium',
             enabled: true
-          }))
+          })
+        }
         if (additions.length === 0) {
           if (notify) pushToast('这些礼物已经添加过了')
           return prev
@@ -682,7 +686,7 @@ export function SettingsPage(): React.JSX.Element {
               index="02"
               eyebrow="gift mapping"
               title="礼物映射"
-              description="礼物 ID 决定触发哪一条规则，数量是每份礼物掉落的骨头数。连击会叠加上限 40 根。"
+              description="礼物名称决定触发哪一条规则，数量是每份礼物掉落的骨头数。连击会叠加上限 40 根。"
               aside={
                 <div className="flex items-center gap-2">
                   <Button variant="ghost" onClick={openPicker}>
@@ -698,7 +702,7 @@ export function SettingsPage(): React.JSX.Element {
             />
             <div className="mt-7 overflow-hidden rounded-2xl border border-line bg-surface/55">
               <div className="hidden grid-cols-[minmax(0,1fr)_108px_132px_44px_32px] gap-3 border-b border-line/80 bg-[#fff4d6] px-4 py-2.5 font-mono text-[9.5px] tracking-[0.18em] text-ink-soft uppercase sm:grid">
-                <span>礼物 / ID</span>
+                <span>礼物名称</span>
                 <span>每份骨头</span>
                 <span>大小</span>
                 <span>启用</span>
@@ -748,7 +752,7 @@ export function SettingsPage(): React.JSX.Element {
               )}
             </div>
             <p className="mt-3 text-[11.5px] leading-relaxed text-ink-soft">
-              提示：用「选择礼物」从直播间面板点选，或手动填写礼物 ID。单条消息最多生成 40 根骨头，防止刷屏卡顿。
+              提示：用「选择礼物」从直播间面板点选，或手动填写礼物名称。同名礼物会自动合并。单条消息最多生成 40 根骨头，防止刷屏卡顿。
             </p>
           </section>
 
@@ -1000,7 +1004,7 @@ export function SettingsPage(): React.JSX.Element {
         {pickerOpen && activeRoomId && (
           <GiftPickerModal
             roomId={activeRoomId}
-            existingIds={config.gifts.filter((gift) => gift.giftId > 0).map((gift) => gift.giftId)}
+            existingNames={config.gifts.map((gift) => gift.name.trim()).filter(Boolean)}
             onPick={(item) => addGiftRules([item])}
             onPickAll={(items) => addGiftRules(items, true)}
             onClose={() => setPickerOpen(false)}

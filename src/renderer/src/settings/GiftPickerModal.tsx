@@ -17,13 +17,13 @@ function priceLabel(item: GiftCatalogItem): string {
 
 export function GiftPickerModal({
   roomId,
-  existingIds,
+  existingNames,
   onPick,
   onPickAll,
   onClose
 }: {
   roomId: number
-  existingIds: number[]
+  existingNames: string[]
   onPick: (item: GiftCatalogItem) => void
   onPickAll: (items: GiftCatalogItem[]) => void
   onClose: () => void
@@ -33,7 +33,7 @@ export function GiftPickerModal({
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [reloadKey, setReloadKey] = useState(0)
-  const [added, setAdded] = useState<Set<number>>(() => new Set(existingIds))
+  const [added, setAdded] = useState<Set<string>>(() => new Set(existingNames))
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
@@ -51,8 +51,16 @@ export function GiftPickerModal({
       .fetchGifts(roomId)
       .then((catalog) => {
         if (cancelled) return
-        setItems(catalog)
-        setAdded(new Set(existingIds))
+        const seen = new Set<string>()
+        setItems(
+          catalog.filter((item) => {
+            const key = item.name.trim()
+            if (!key || seen.has(key)) return false
+            seen.add(key)
+            return true
+          })
+        )
+        setAdded(new Set(existingNames))
       })
       .catch((reason: unknown) => {
         if (cancelled) return
@@ -64,25 +72,27 @@ export function GiftPickerModal({
     return () => {
       cancelled = true
     }
-    // existingIds 只在打开时作为初始值，后续由本地 added 维护
+    // existingNames 只在打开时作为初始值，后续由本地 added 维护
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, reloadKey])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return items
-    return items.filter(
-      (item) => item.name.toLowerCase().includes(q) || String(item.id).includes(q)
-    )
+    return items.filter((item) => item.name.toLowerCase().includes(q))
   }, [items, query])
 
-  const remaining = useMemo(() => items.filter((item) => !added.has(item.id)), [items, added])
+  const remaining = useMemo(
+    () => items.filter((item) => !added.has(item.name.trim())),
+    [items, added]
+  )
 
   const pick = useCallback(
     (item: GiftCatalogItem) => {
-      if (added.has(item.id)) return
+      const key = item.name.trim()
+      if (added.has(key)) return
       onPick(item)
-      setAdded((prev) => new Set(prev).add(item.id))
+      setAdded((prev) => new Set(prev).add(key))
     },
     [added, onPick]
   )
@@ -90,7 +100,7 @@ export function GiftPickerModal({
   const pickAll = useCallback(() => {
     if (remaining.length === 0) return
     onPickAll(remaining)
-    setAdded(new Set(items.map((item) => item.id)))
+    setAdded(new Set(items.map((item) => item.name.trim())))
   }, [remaining, items, onPickAll])
 
   return (
@@ -121,7 +131,7 @@ export function GiftPickerModal({
             </div>
             <h2 className="mt-2 text-[22px] tracking-tight">选择礼物</h2>
             <p className="mt-1.5 text-[11.5px] leading-relaxed text-ink-soft">
-              点击礼物加入映射，每份默认掉落 1 根骨头，之后可以再调。
+              点击礼物加入映射，每份默认掉落 1 根骨头，之后可以再调。同名礼物自动合并。
             </p>
           </div>
           <button
@@ -142,7 +152,7 @@ export function GiftPickerModal({
           <input
             className="field-input !py-2.5 !pl-9 !text-[13px]"
             value={query}
-            placeholder="搜索礼物名称或 ID"
+            placeholder="搜索礼物名称"
             aria-label="搜索礼物"
             onChange={(event) => setQuery(event.target.value)}
             autoFocus
@@ -182,15 +192,16 @@ export function GiftPickerModal({
                 {items.length === 0 ? '这个直播间没有返回礼物' : '没有匹配的礼物'}
               </p>
               <p className="mt-1 text-[11.5px] text-ink-soft">
-                {items.length === 0 ? '确认直播间号正确，或手动添加礼物 ID。' : '换个关键词试试。'}
+                {items.length === 0 ? '确认直播间号正确，或手动添加礼物名称。' : '换个关键词试试。'}
               </p>
             </div>
           ) : (
             <ul className="flex flex-col gap-2">
               {filtered.map((item) => {
-                const picked = added.has(item.id)
+                const name = item.name.trim()
+                const picked = added.has(name)
                 return (
-                  <li key={item.id}>
+                  <li key={name}>
                     <button
                       type="button"
                       onClick={() => pick(item)}
@@ -223,9 +234,6 @@ export function GiftPickerModal({
                         <div className="min-w-0">
                           <div className={`truncate text-[13px] font-medium ${picked ? 'text-ink-soft' : ''}`}>
                             {item.name}
-                          </div>
-                          <div className="mt-0.5 font-mono text-[10.5px] tracking-wider text-ink-soft tabular-nums">
-                            ID {item.id}
                           </div>
                         </div>
                       </div>

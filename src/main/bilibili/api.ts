@@ -185,8 +185,9 @@ export async function fetchGiftCatalog(shortRoomId: number, sessdata: string): P
   }
 
   if (combined.length === 0) {
-    throw new Error('没有取到礼物列表，确认直播间号正确或稍后重试，也可以手动添加礼物 ID')
+    throw new Error('没有取到礼物列表，确认直播间号正确或稍后重试，也可以手动添加礼物名称')
   }
+  const seen = new Set<string>()
   return combined
     .filter((item) => Number.isFinite(item.id))
     .map((item) => ({
@@ -196,4 +197,11 @@ export async function fetchGiftCatalog(shortRoomId: number, sessdata: string): P
       coinType: item.coin_type ?? item.coinType ?? '',
       image: item.webp || item.img_basic || ''
     }))
+    // 同名礼物可能是不同批次/别名的多个 ID，选择时只保留一条
+    .filter((item) => {
+      const key = item.name.trim()
+      if (!key || seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
 }

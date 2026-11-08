@@ -122,7 +122,7 @@ const mockApi: BoneBowlAPI = {
   getStatus: async () => mockStatus,
   fetchGifts: async (roomId) => {
     if (!roomId) throw new Error('先填写直播间号')
-    // 预览里通过 Vite 代理拉真实礼物面板，失败则退回内置示例
+    // 预览里通过 Vite 代理拉真实礼物面板，失败直接报错，不回退示例数据
     const controller = new AbortController()
     const timer = window.setTimeout(() => controller.abort(), 8000)
     try {
@@ -136,7 +136,16 @@ const mockApi: BoneBowlAPI = {
       ).then((res) => res.json())) as { data?: { list?: RawGift[] } }
       const list = json?.data?.list ?? []
       if (!Array.isArray(list) || list.length === 0) throw new Error('礼物列表为空')
-      return list.filter((item) => Number.isFinite(item.id)).map(mapGift)
+      const seen = new Set<string>()
+      return list
+        .filter((item) => Number.isFinite(item.id))
+        .map(mapGift)
+        .filter((item) => {
+          const key = item.name.trim()
+          if (!key || seen.has(key)) return false
+          seen.add(key)
+          return true
+        })
     } catch {
       throw new Error('拿不到实时礼物列表：开发预览需要重启 npm run dev:web 让代理生效，或检查网络后重试')
     } finally {

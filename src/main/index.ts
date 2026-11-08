@@ -102,7 +102,10 @@ function startClient(opts: { roomId?: number | null; sessdata?: string } = {}): 
 
 function handleGift(data: SendGiftData): void {
   const config = loadConfig()
-  const rule = config.gifts.find((g) => g.enabled && g.giftId === data.giftId)
+  const giftName = (data.giftName || '').trim()
+  if (!giftName) return
+  // B站同一礼物存在多个 ID，映射只按礼物名称匹配
+  const rule = config.gifts.find((g) => g.enabled && g.name.trim() === giftName)
   if (!rule) return
   const count = Math.min(40, Math.max(1, Math.round(rule.bones * Math.max(1, data.num || 1))))
   const event: GiftEvent = {
