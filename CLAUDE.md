@@ -39,7 +39,7 @@ docs/              README 截图
 
 - **B站协议**：`getDanmuInfo` 需要 Wbi 签名与 Cookie 中的 `buvid3`；信息流是 WebSocket 二进制封包（protover 2/3，zlib/brotli），认证 op=7、心跳 op=2、消息 op=5。必须登录（配置里有 `sessdata`）才允许连接直播间，自动连接同样受此限制。
 - **扫码登录**：`passport.bilibili.com/x/passport-login/web/qrcode/generate` 生成，poll 返回 0/86101/86090/86038。成功后从 Set-Cookie 取 SESSDATA，主进程保存并清理登录 UID 缓存。设置页只提供扫码登录，不保留手动粘贴输入框。
-- **礼物事件**：`SEND_GIFT`，按 `tid` 去重；映射规则见 `AppConfig.gifts`，单条最多 40 根骨头。导入礼物调用 `giftPanel/roomGiftList`，`platform` 必须传 `pc`，传 `web` 会返回空列表。
+- **礼物事件**：`SEND_GIFT`，按 `tid` 去重；映射规则见 `AppConfig.gifts`，单条最多 40 根骨头。设置页「选择礼物」弹窗调用 `giftPanel/roomGiftList`，`platform` 必须传 `pc`，传 `web` 会返回空列表。
 - **叠加层**：透明背景，1920×1080 设计坐标缩放适配；骨头用系统 🦴 字形生成贴图并裁剪；碗的碰撞体是“外壁 + 碗口 + 内壁”的闭合截面；碗前壁半透明（约 58%）；不加隐形挡墙；骨头数量上限 100，可设置消失时长（0 = 永不）。
 - **开发模式判断**：`process.env.ELECTRON_RENDERER_URL` 存在即 Vite 开发；主进程用 `app.isPackaged`。
 

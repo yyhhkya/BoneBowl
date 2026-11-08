@@ -11,7 +11,6 @@ import {
   Power,
   QrCode,
   SignIn,
-  Sparkle,
   WarningCircle
 } from '@phosphor-icons/react'
 import {
@@ -21,6 +20,7 @@ import {
   type AppInfo,
   type BoneSize,
   type GiftEvent,
+  type GiftCatalogItem,
   type GiftRule,
   type QrLoginInfo,
   type QrLoginState,
@@ -38,6 +38,7 @@ import {
   Toggle
 } from './ui'
 import { GiftRow } from './GiftRow'
+import { GiftPickerModal } from './GiftPickerModal'
 import { LoginQrModal } from './LoginQrModal'
 
 const api = getApi()
@@ -72,7 +73,7 @@ export function SettingsPage(): React.JSX.Element {
   const [roomIdText, setRoomIdText] = useState('')
   const [roomError, setRoomError] = useState<string | null>(null)
   const [sessdata, setSessdata] = useState('')
-  const [busy, setBusy] = useState<'connect' | 'import' | null>(null)
+  const [busy, setBusy] = useState<'connect' | null>(null)
   const [activity, setActivity] = useState<GiftEvent[]>([])
   const [toasts, setToasts] = useState<Toast[]>([])
   const [portText, setPortText] = useState('')
@@ -81,6 +82,7 @@ export function SettingsPage(): React.JSX.Element {
   const [qrState, setQrState] = useState<QrLoginState>('waiting')
   const [qrMessage, setQrMessage] = useState('等待扫码')
   const [qrBusy, setQrBusy] = useState(false)
+  const [pickerOpen, setPickerOpen] = useState(false)
 
   const pendingRef = useRef<Partial<AppConfig>>({})
   const saveTimerRef = useRef<number | undefined>(undefined)
@@ -231,19 +233,14 @@ export function SettingsPage(): React.JSX.Element {
     }
   }, [])
 
-  const handleImport = useCallback(async () => {
-    const roomId = Number(roomIdText) || config?.roomId
-    if (!roomId) {
-      setRoomError('导入礼物前先填写直播间号')
-      return
-    }
-    setBusy('import')
-    try {
-      const catalog = await api.fetchGifts(roomId)
+  const activeRoomId = Number(roomIdText) || config?.roomId || null
+
+  const addGiftRules = useCallback(
+    (items: GiftCatalogItem[], notify = false) => {
       setConfig((prev) => {
         if (!prev) return prev
-        const existing = new Set(prev.gifts.map((g) => g.giftId))
-        const additions = catalog
+        const existing = new Set(prev.gifts.filter((g) => g.giftId > 0).map((g) => g.giftId))
+        const additions = items
           .filter((item) => !existing.has(item.id))
           .map<GiftRule>((item) => ({
             id: crypto.randomUUID(),
@@ -254,20 +251,26 @@ export function SettingsPage(): React.JSX.Element {
             enabled: true
           }))
         if (additions.length === 0) {
-          pushToast('礼物列表已是最新')
+          if (notify) pushToast('这些礼物已经添加过了')
           return prev
         }
         const gifts = [...prev.gifts, ...additions]
         void flushSave({ gifts })
-        pushToast(`已导入 ${additions.length} 个礼物`)
+        if (notify) pushToast(`已添加 ${additions.length} 个礼物`)
         return { ...prev, gifts }
       })
-    } catch (error) {
-      pushToast(error instanceof Error ? error.message : '导入失败', 'error')
-    } finally {
-      setBusy(null)
+    },
+    [flushSave, pushToast]
+  )
+
+  const openPicker = useCallback(() => {
+    if (!activeRoomId) {
+      setRoomError('选择礼物前先填写直播间号')
+      pushToast('先填写直播间号', 'error')
+      return
     }
-  }, [config?.roomId, roomIdText, flushSave, pushToast])
+    setPickerOpen(true)
+  }, [activeRoomId, pushToast])
 
   const commitRoomId = useCallback(() => {
     const roomId = Number(roomIdText)
@@ -661,14 +664,9 @@ export function SettingsPage(): React.JSX.Element {
               description="礼物 ID 决定触发哪一条规则，数量是每份礼物掉落的骨头数。连击会叠加上限 40 根。"
               aside={
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    onClick={() => void handleImport()}
-                    loading={busy === 'import'}
-                    disabled={!config.roomId && !roomIdText}
-                  >
-                    <Sparkle size={15} />
-                    导入礼物
+                  <Button variant="ghost" onClick={openPicker} disabled={!activeRoomId}>
+                    <Gift size={15} />
+                    选择礼物
                   </Button>
                   <Button variant="primary" onClick={addGift}>
                     <Plus size={15} weight="bold" />
@@ -692,12 +690,12 @@ export function SettingsPage(): React.JSX.Element {
                   </span>
                   <p className="mt-4 text-[14px] font-medium">还没有礼物映射</p>
                   <p className="mt-1 max-w-[36ch] text-[12.5px] leading-relaxed text-ink-soft">
-                    从直播间导入礼物，或手动添加一条。未映射的礼物不会掉落骨头。
+                    从直播间礼物面板里点选，或手动添加一条。未映射的礼物不会掉落骨头。
                   </p>
                   <div className="mt-5 flex gap-2">
-                    <Button variant="ghost" onClick={() => void handleImport()} loading={busy === 'import'}>
-                      <Sparkle size={15} />
-                      导入礼物
+                    <Button variant="ghost" onClick={openPicker} disabled={!activeRoomId}>
+                      <Gift size={15} />
+                      选择礼物
                     </Button>
                     <Button onClick={addGift}>
                       <Plus size={15} />
@@ -729,7 +727,7 @@ export function SettingsPage(): React.JSX.Element {
               )}
             </div>
             <p className="mt-3 text-[11.5px] leading-relaxed text-ink-soft">
-              提示：礼物 ID 可从 B站礼物面板或「导入礼物」获得。单条消息最多生成 40 根骨头，防止刷屏卡顿。
+              提示：用「选择礼物」从直播间面板点选，或手动填写礼物 ID。单条消息最多生成 40 根骨头，防止刷屏卡顿。
             </p>
           </section>
 
@@ -976,6 +974,18 @@ export function SettingsPage(): React.JSX.Element {
           ))}
         </AnimatePresence>
       </div>
+
+      <AnimatePresence>
+        {pickerOpen && activeRoomId && (
+          <GiftPickerModal
+            roomId={activeRoomId}
+            existingIds={config.gifts.filter((gift) => gift.giftId > 0).map((gift) => gift.giftId)}
+            onPick={(item) => addGiftRules([item])}
+            onPickAll={(items) => addGiftRules(items, true)}
+            onClose={() => setPickerOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {qr && (
