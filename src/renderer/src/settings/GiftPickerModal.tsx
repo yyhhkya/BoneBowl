@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowClockwise, Check, MagnifyingGlass, WarningCircle, X } from '@phosphor-icons/react'
+import { ArrowClockwise, Check, Gift, MagnifyingGlass, WarningCircle, X } from '@phosphor-icons/react'
 import type { GiftCatalogItem } from '../../../shared/types'
 import { getApi } from '../lib/api'
 import { Button } from './ui'
@@ -9,8 +9,10 @@ const api = getApi()
 
 function priceLabel(item: GiftCatalogItem): string {
   if (!item.price) return '免费'
-  const unit = item.coinType === 'silver' ? '银瓜子' : '金瓜子'
-  return `${item.price.toLocaleString('zh-CN')} ${unit}`
+  if (item.coinType === 'silver') return `${item.price.toLocaleString('zh-CN')} 银瓜子`
+  // 接口价格单位是金瓜子，1 电池 = 100 金瓜子
+  const batteries = Math.round(item.price) / 100
+  return `${batteries.toLocaleString('zh-CN', { maximumFractionDigits: 1 })} 电池`
 }
 
 export function GiftPickerModal({
@@ -200,12 +202,31 @@ export function GiftPickerModal({
                           : 'border-line bg-white hover:border-[#f0d68f] hover:bg-[#fffaf0] active:scale-[0.995]'
                       }`}
                     >
-                      <div className="min-w-0">
-                        <div className={`truncate text-[13px] font-medium ${picked ? 'text-ink-soft' : ''}`}>
-                          {item.name}
-                        </div>
-                        <div className="mt-0.5 font-mono text-[10.5px] tracking-wider text-ink-soft tabular-nums">
-                          ID {item.id}
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-[#fff6df]">
+                          <Gift size={17} className={picked ? 'text-[#d8c48f]' : 'text-[#d9b96a]'} />
+                          {item.image ? (
+                            <img
+                              src={item.image}
+                              alt=""
+                              loading="lazy"
+                              referrerPolicy="no-referrer"
+                              className={`absolute inset-0 h-full w-full object-contain p-1 ${
+                                picked ? 'opacity-55' : ''
+                              }`}
+                              onError={(event) => {
+                                event.currentTarget.style.display = 'none'
+                              }}
+                            />
+                          ) : null}
+                        </span>
+                        <div className="min-w-0">
+                          <div className={`truncate text-[13px] font-medium ${picked ? 'text-ink-soft' : ''}`}>
+                            {item.name}
+                          </div>
+                          <div className="mt-0.5 font-mono text-[10.5px] tracking-wider text-ink-soft tabular-nums">
+                            ID {item.id}
+                          </div>
                         </div>
                       </div>
                       <div className="flex shrink-0 items-center gap-2.5">

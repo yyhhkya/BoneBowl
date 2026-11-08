@@ -149,6 +149,8 @@ interface GiftListEntry {
   price?: number
   coin_type?: string
   coinType?: string
+  img_basic?: string
+  webp?: string
 }
 
 export async function fetchGiftCatalog(shortRoomId: number, sessdata: string): Promise<GiftCatalogItem[]> {
@@ -178,6 +180,7 @@ export async function fetchGiftCatalog(shortRoomId: number, sessdata: string): P
       id: item.id,
       name: item.name || `礼物 ${item.id}`,
       price: item.price ?? 0,
-      coinType: item.coin_type ?? item.coinType ?? ''
+      coinType: item.coin_type ?? item.coinType ?? '',
+      image: item.webp || item.img_basic || ''
     }))
 }

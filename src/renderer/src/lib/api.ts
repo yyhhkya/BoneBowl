@@ -61,16 +61,17 @@ function emitStatus(status: RoomStatus, wait = 0): void {
 }
 
 const mockCatalog: GiftCatalogItem[] = [
-  { id: 31036, name: '小花花', price: 100, coinType: 'gold' },
-  { id: 31164, name: '电池', price: 100, coinType: 'gold' },
-  { id: 30064, name: '小心心', price: 500, coinType: 'gold' },
-  { id: 30760, name: '牛哇牛哇', price: 100, coinType: 'gold' },
-  { id: 30537, name: '小花花车', price: 1000, coinType: 'gold' },
-  { id: 30628, name: '干杯', price: 2000, coinType: 'gold' },
-  { id: 30536, name: '爱心瓶', price: 3000, coinType: 'gold' },
-  { id: 30581, name: '爱心气球', price: 5000, coinType: 'gold' },
-  { id: 30580, name: '爱心发射', price: 10000, coinType: 'gold' },
-  { id: 30535, name: '飞机', price: 100000, coinType: 'gold' }
+  { id: 31036, name: '小花花', price: 100, coinType: 'gold', image: 'https://i0.hdslb.com/bfs/live/28357ba4cd566418730ca29da2c552efa7e4a390.webp' },
+  { id: 31039, name: '牛哇牛哇', price: 100, coinType: 'gold', image: 'https://i0.hdslb.com/bfs/live/7571c8bdfcb65f9b00ab1307b2c86630f0d00859.webp' },
+  { id: 35432, name: '鼓鼓掌', price: 500, coinType: 'gold', image: 'https://i0.hdslb.com/bfs/live/353e3de2d989a2cc0e68526a1965019aaf94081d.webp' },
+  { id: 35520, name: '比心', price: 1000, coinType: 'gold', image: 'https://i0.hdslb.com/bfs/live/77f216bef72e29d62db79de373bf158a763c80c8.webp' },
+  { id: 35525, name: '甜滋滋', price: 5000, coinType: 'gold', image: 'https://i0.hdslb.com/bfs/live/27cc54dfa35680e8f365be17372d39a1bd0eca29.webp' },
+  { id: 35545, name: '情书', price: 5200, coinType: 'gold', image: 'https://i0.hdslb.com/bfs/live/cdc77fab896a1b9502b20c361355173094180b01.webp' },
+  { id: 34315, name: '喜欢你', price: 9900, coinType: 'gold', image: 'https://i0.hdslb.com/bfs/live/8bedf765322d218e363251a712d0853874847146.webp' },
+  { id: 35542, name: '钻石戒指', price: 19900, coinType: 'gold', image: 'https://i0.hdslb.com/bfs/live/0961371ed967d0d1a37cb3cb774bba04840fa280.webp' },
+  { id: 35768, name: '亲密之旅', price: 50000, coinType: 'gold', image: 'https://i0.hdslb.com/bfs/live/1a58587ade058d840ed583b6b00e4ba7ce576f0c.webp' },
+  { id: 32093, name: '极速超跑（流光飞电）', price: 100000, coinType: 'gold', image: 'https://i0.hdslb.com/bfs/live/3db1c96b11437782a4871eaac618c2fbc1a490c4.webp' },
+  { id: 33070, name: '小电视飞船（荣耀飞船）', price: 2999000, coinType: 'gold', image: 'https://i0.hdslb.com/bfs/live/4bf6c6043f4b580c908f17866fd5fa81cda6c93a.webp' }
 ]
 
 function emitGift(size: BoneSize = 'medium'): void {

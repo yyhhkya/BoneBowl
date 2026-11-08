@@ -41,6 +41,7 @@ export interface GiftCatalogItem {
   name: string
   price: number
   coinType: string
+  image?: string
 }
 
 export interface AppInfo {
