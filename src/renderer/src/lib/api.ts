@@ -1,3 +1,4 @@
+import QRCode from 'qrcode'
 import {
   DEFAULT_CONFIG,
   type AppConfig,
@@ -72,22 +73,6 @@ function emitGift(size: BoneSize = 'medium'): void {
   channel?.postMessage({ type: 'gift', gift })
 }
 
-function mockQrImage(): string {
-  const cells: string[] = []
-  for (let y = 0; y < 21; y += 1) {
-    for (let x = 0; x < 21; x += 1) {
-      const finder =
-        ((x < 7 && y < 7) || (x > 13 && y < 7) || (x < 7 && y > 13)) &&
-        (x % 6 === 0 || y % 6 === 0 || (x > 1 && x < 5 && y > 1 && y < 5) ||
-          (x > 15 && x < 19 && y > 1 && y < 5) || (x > 1 && x < 5 && y > 15 && y < 19))
-      const noise = (x * 7 + y * 11) % 7 < 3
-      if (finder || noise) cells.push(`<rect x="${x * 10}" y="${y * 10}" width="10" height="10"/>`)
-    }
-  }
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 210"><rect width="210" height="210" fill="#fffdf4"/><g fill="#3a2f1f">${cells.join('')}</g></svg>`
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
-}
-
 const mockApi: BoneBowlAPI = {
   getConfig: async () => clone(mockConfig),
   saveConfig: async (patch) => {
@@ -135,7 +120,12 @@ const mockApi: BoneBowlAPI = {
   qrLogin: async () => {
     mockQrPolls = 0
     await delay(300)
-    return { key: 'mock-qr-key', image: mockQrImage(), expiresIn: 180 }
+    const image = await QRCode.toDataURL('https://www.bilibili.com/', {
+      margin: 1,
+      width: 360,
+      color: { dark: '#2f2a22', light: '#fffdf7' }
+    })
+    return { key: 'mock-qr-key', image, expiresIn: 180 }
   },
   qrPoll: async (): Promise<QrLoginPoll> => {
     mockQrPolls += 1
