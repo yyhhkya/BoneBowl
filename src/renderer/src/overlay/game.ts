@@ -1,4 +1,4 @@
-import { Application, Container, Sprite, Text, type Ticker } from 'pixi.js'
+import { Application, Container, Sprite, type Ticker } from 'pixi.js'
 import RAPIER from '@dimforge/rapier2d-compat'
 import type { GiftEvent } from '../../../shared/types'
 import { createBoneTexture, createBowlTextures } from './sprites'
@@ -19,13 +19,6 @@ interface PendingBone {
   at: number
   x: number
   scale: number
-}
-
-interface FloatingLabel {
-  view: Text
-  age: number
-  life: number
-  baseY: number
 }
 
 function toWorld(lx: number, ly: number): { x: number; y: number } {
@@ -71,10 +64,8 @@ export class BoneScene {
   private world!: RAPIER.World
   private root = new Container()
   private boneLayer = new Container()
-  private labelLayer = new Container()
   private bones: Bone[] = []
   private pending: PendingBone[] = []
-  private labels: FloatingLabel[] = []
   private accumulator = 0
   private lifetimeMs = 0
   private lastWidth = 0
@@ -116,8 +107,6 @@ export class BoneScene {
     bowlFront.position.set(BOWL.x, BOWL.y)
     this.root.addChild(bowlFront)
 
-    this.root.addChild(this.labelLayer)
-
     const cavityWorld = new Float32Array(COLLIDER_POINTS.length * 2)
     COLLIDER_POINTS.forEach(([lx, ly], index) => {
       const point = toWorld(lx, ly)
@@ -143,34 +132,10 @@ export class BoneScene {
     if (!this.world) return
     const now = performance.now()
     const scale = Math.min(5, Math.max(0.5, event.scale || 1))
-    const label =
-      event.uname && event.uname !== '观众'
-        ? `${event.uname} 投喂 ${event.giftName}`
-        : `投喂 ${event.giftName}`
-    this.spawnLabel(label, scale)
     for (let i = 0; i < event.bones; i += 1) {
       const x = BOWL.x + (Math.random() * 2 - 1) * 200
       this.pending.push({ at: now + i * 95, x, scale })
     }
-  }
-
-  private spawnLabel(text: string, scale: number): void {
-    const view = new Text({
-      text,
-      style: {
-        fontFamily: 'Geist Variable, Microsoft YaHei, sans-serif',
-        fontSize: Math.min(34, Math.max(24, Math.round(27 + (scale - 1) * 10))),
-        fontWeight: '500',
-        fill: '#fff7e6',
-        stroke: { color: '#2c2418', width: 6 },
-        dropShadow: { color: '#2c2418', alpha: 0.35, blur: 8, distance: 4, angle: Math.PI / 2 }
-      }
-    })
-    view.anchor.set(0.5)
-    const baseY = 470
-    view.position.set(BOWL.x, baseY)
-    this.labelLayer.addChild(view)
-    this.labels.push({ view, age: 0, life: 1700, baseY })
   }
 
   private spawnBone(x: number, scale: number, now: number): void {
@@ -270,20 +235,6 @@ export class BoneScene {
       bone.sprite.rotation = rotation + Math.PI / 2
       bone.shadow.position.set(position.x + 5, position.y + 7)
       bone.shadow.rotation = bone.sprite.rotation
-    }
-
-    for (let i = this.labels.length - 1; i >= 0; i -= 1) {
-      const label = this.labels[i]
-      label.age += ticker.deltaMS
-      const progress = label.age / label.life
-      if (progress >= 1) {
-        this.labelLayer.removeChild(label.view)
-        label.view.destroy()
-        this.labels.splice(i, 1)
-        continue
-      }
-      label.view.y = label.baseY - progress * 46
-      label.view.alpha = progress < 0.12 ? progress / 0.12 : 1 - (progress - 0.12) / 0.88
     }
 
     this.layout()
