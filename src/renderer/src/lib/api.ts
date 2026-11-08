@@ -64,9 +64,9 @@ function mapGift(item: RawGift): GiftCatalogItem {
   }
 }
 
-function emitGift(size: BoneSize = 'medium'): void {
+function buildMockGift(size: BoneSize = 'medium'): GiftEvent {
   const rule = mockConfig.gifts.find((g) => g.enabled) ?? mockConfig.gifts[0]
-  const gift: GiftEvent = {
+  return {
     giftId: rule?.giftId ?? 31036,
     giftName: rule?.name ?? '小花花',
     uid: 60861121,
@@ -76,8 +76,12 @@ function emitGift(size: BoneSize = 'medium'): void {
     size,
     timestamp: Date.now()
   }
+}
+
+function emitGift(size: BoneSize = 'medium', broadcast = true): void {
+  const gift = buildMockGift(size)
   setTimeout(() => giftListeners.forEach((cb) => cb(gift)), 20)
-  channel?.postMessage({ type: 'gift', gift })
+  if (broadcast) channel?.postMessage({ type: 'gift', gift })
 }
 
 const mockApi: BoneBowlAPI = {
@@ -142,16 +146,47 @@ const mockApi: BoneBowlAPI = {
     }
   },
   testGift: async (size) => {
-    emitGift(size)
+    const boneSize: BoneSize = size ?? 'medium'
+    try {
+      const response = await fetch('/dev-test-gift', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ size: boneSize })
+      })
+      if (!response.ok) throw new Error('试投失败')
+      // 已经由叠加层服务通过 WebSocket 广播，这里只更新设置页的事件列表
+      emitGift(boneSize, false)
+    } catch {
+      emitGift(boneSize)
+    }
   },
-  getInfo: async (): Promise<AppInfo> => ({
-    port: Number(window.location.port) || 17800,
-    overlayUrl: `${window.location.origin}/overlay`,
-    version: '0.1.0',
-    isDev: true
-  }),
+  getInfo: async (): Promise<AppInfo> => {
+    try {
+      const response = await fetch('/dev-overlay-info')
+      if (response.ok) {
+        const info = (await response.json()) as { port?: number }
+        const port = Number(info.port) || 17800
+        return {
+          port,
+          overlayUrl: `${window.location.origin}/overlay?ws=${port}`,
+          version: '0.1.0',
+          isDev: true
+        }
+      }
+    } catch {
+      // 叠加层服务不可用时退回当前页面端口
+    }
+    return {
+      port: Number(window.location.port) || 17800,
+      overlayUrl: `${window.location.origin}/overlay`,
+      version: '0.1.0',
+      isDev: true
+    }
+  },
   openOverlay: async () => {
-    window.open('/overlay?test=1', '_blank')
+    const info = await mockApi.getInfo()
+    const joiner = info.overlayUrl.includes('?') ? '&' : '?'
+    window.open(`${info.overlayUrl}${joiner}test=1`, '_blank')
   },
   openExternal: async (url) => {
     window.open(url, '_blank', 'noopener')

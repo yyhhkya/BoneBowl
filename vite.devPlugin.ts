@@ -4,8 +4,9 @@ import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import type { Plugin, ViteDevServer } from 'vite'
 import { normalizeConfig } from './src/shared/config'
-import { DEFAULT_CONFIG, type AppConfig } from './src/shared/types'
+import { DEFAULT_CONFIG, type AppConfig, type BoneSize, type GiftEvent } from './src/shared/types'
 import { refreshLoginIfNeeded } from './src/main/bilibili/refresh'
+import { OverlayServer } from './src/main/server'
 
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
@@ -60,6 +61,46 @@ async function readBody(req: import('node:http').IncomingMessage): Promise<strin
   return Buffer.concat(chunks).toString('utf8')
 }
 
+let overlayService: Promise<{ server: OverlayServer; port: number }> | null = null
+
+/** dev 预览也启动一个真实的叠加层服务，试投可通过 /ws 推给 OBS */
+function ensureOverlayService(): Promise<{ server: OverlayServer; port: number }> {
+  if (!overlayService) {
+    overlayService = (async () => {
+      const config = readConfig()
+      const overlay = new OverlayServer(join(process.cwd(), 'out', 'renderer'))
+      overlay.setConfigProvider(() => {
+        const current = readConfig()
+        return {
+          overlayScale: current.overlayScale,
+          boneLifetimeSec: current.boneLifetimeSec
+        }
+      })
+      const port = await overlay.start(config.port || 17800)
+      return { server: overlay, port }
+    })().catch((error) => {
+      overlayService = null
+      throw error
+    })
+  }
+  return overlayService
+}
+
+function buildTestGift(size: BoneSize): GiftEvent {
+  const config = readConfig()
+  const rule = config.gifts.find((g) => g.enabled) ?? config.gifts[0]
+  return {
+    giftId: rule?.giftId ?? 0,
+    giftName: rule?.name ?? '测试骨头',
+    uid: 0,
+    uname: '测试观众',
+    num: 1,
+    bones: Math.max(1, rule?.bones ?? 1),
+    size,
+    timestamp: Date.now()
+  }
+}
+
 /**
  * 浏览器预览专用：
  * - /dev-config 读写与正式应用相同的 config.json
@@ -70,12 +111,43 @@ export function devApiPlugin(): Plugin {
   return {
     name: 'bonebowl-dev-api',
     configureServer(server: ViteDevServer) {
+      server.httpServer?.once('close', () => {
+        const current = overlayService
+        overlayService = null
+        void current
+          ?.then(({ server: overlay }) => overlay.stop())
+          .catch(() => undefined)
+      })
       server.middlewares.use(async (req, res, next) => {
         if (!req.url) {
           next()
           return
         }
         const url = new URL(req.url, 'http://localhost')
+
+        if (url.pathname === '/dev-overlay-info') {
+          try {
+            const { port } = await ensureOverlayService()
+            sendJson(res, 200, { port })
+          } catch {
+            sendJson(res, 500, { message: '叠加层服务启动失败' })
+          }
+          return
+        }
+
+        if (url.pathname === '/dev-test-gift' && req.method === 'POST') {
+          try {
+            const body = JSON.parse((await readBody(req)) || '{}') as { size?: BoneSize }
+            const size: BoneSize =
+              body.size === 'small' || body.size === 'large' ? body.size : 'medium'
+            const { server: overlay, port } = await ensureOverlayService()
+            overlay.broadcast({ type: 'gift', gift: buildTestGift(size) })
+            sendJson(res, 200, { ok: true, port })
+          } catch {
+            sendJson(res, 500, { message: '试投失败' })
+          }
+          return
+        }
 
         if (url.pathname === '/dev-config') {
           if (req.method === 'GET') {

@@ -26,7 +26,7 @@ export function OverlayPage(): React.JSX.Element {
       const explicit = params.get('ws')
       if (explicit) return explicit
       const port = window.location.port
-      if (!port || port === '5173' || port === '4173') return '17800'
+      if (!port || port === '5173' || port === '4173' || port === '5199') return '17800'
       return port
     }
 

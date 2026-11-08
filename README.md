@@ -20,13 +20,13 @@ npm install
 npm run dev
 ```
 
-只预览界面（不启动 Electron，使用内置模拟数据）：
+只预览界面（不启动 Electron，使用内置模拟数据，同时启动一个本地叠加层服务）：
 
 ```bash
 npm run dev:web
 ```
 
-浏览器打开 `http://localhost:5199` 查看设置页，`http://localhost:5199/overlay?test=1&debug=1` 查看叠加层（`test=1` 会自动投喂演示骨头）。
+浏览器打开 `http://localhost:5199` 查看设置页，`http://localhost:5199/overlay?test=1&debug=1` 查看叠加层（`test=1` 会自动投喂演示骨头）。预览里的「试投」会通过本地 WebSocket 真实广播，OBS 浏览器源使用设置页显示的地址（形如 `http://localhost:5199/overlay?ws=17800`）即可看到骨头；如果桌面应用已占用 17800，预览服务会自动顺延端口，地址里的 `ws=` 会跟着变。
 
 ## 构建与打包
 
