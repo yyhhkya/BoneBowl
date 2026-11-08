@@ -26,11 +26,10 @@ src/main/          Electron 主进程
   bilibili/        Wbi 签名、REST、信息流 WebSocket、扫码登录
   config.ts        userData/config.json 读写与字段归一化
   server.ts        127.0.0.1 上的静态服务 + /ws 广播
-  updater.ts       electron-updater 封装
   index.ts         窗口、IPC、礼物映射、生命周期
 src/preload/       contextBridge API
 src/renderer/src/
-  settings/        设置页（直播间、礼物映射、叠加层、更新、事件）
+  settings/        设置页（直播间、礼物映射、叠加层、事件）
   overlay/         Pixi + Rapier 叠加场景（game.ts / sprites.ts）
 src/shared/        主进程与渲染进程共享类型
 docs/              README 截图
@@ -42,7 +41,6 @@ docs/              README 截图
 - **扫码登录**：`passport.bilibili.com/x/passport-login/web/qrcode/generate` 生成，poll 返回 0/86101/86090/86038。成功后从 Set-Cookie 取 SESSDATA，主进程保存并清理登录 UID 缓存。设置页只提供扫码登录，不保留手动粘贴输入框。
 - **礼物事件**：`SEND_GIFT`，按 `tid` 去重；映射规则见 `AppConfig.gifts`，单条最多 40 根骨头。
 - **叠加层**：透明背景，1920×1080 设计坐标缩放适配；骨头用系统 🦴 字形生成贴图并裁剪；碗的碰撞体是“外壁 + 碗口 + 内壁”的闭合截面；碗前壁半透明（约 58%）；不加隐形挡墙；骨头数量上限 100，可设置消失时长（0 = 永不）。
-- **自动更新**：electron-updater generic 源，仅对 NSIS 安装版有效；feed 地址来自配置 `updateFeedUrl`，默认空不检查。打包配置里的 `build.publish` 是占位地址，发布前需要替换。
 - **开发模式判断**：`process.env.ELECTRON_RENDERER_URL` 存在即 Vite 开发；主进程用 `app.isPackaged`。
 
 ## 约定

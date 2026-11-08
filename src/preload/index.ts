@@ -6,8 +6,7 @@ import type {
   GiftEvent,
   QrLoginInfo,
   QrLoginPoll,
-  RoomStatus,
-  UpdateStatus
+  RoomStatus
 } from '../shared/types'
 
 const api: BoneBowlAPI = {
@@ -27,14 +26,6 @@ const api: BoneBowlAPI = {
   },
   qrLogin: () => ipcRenderer.invoke('login:qrcode') as Promise<QrLoginInfo>,
   qrPoll: (key: string) => ipcRenderer.invoke('login:poll', key) as Promise<QrLoginPoll>,
-  getUpdateStatus: () => ipcRenderer.invoke('update:status') as Promise<UpdateStatus>,
-  checkUpdate: () => ipcRenderer.invoke('update:check') as Promise<UpdateStatus>,
-  installUpdate: () => ipcRenderer.invoke('update:install') as Promise<void>,
-  onUpdate: (cb: (status: UpdateStatus) => void) => {
-    const listener = (_event: Electron.IpcRendererEvent, status: UpdateStatus): void => cb(status)
-    ipcRenderer.on('update:status', listener)
-    return () => ipcRenderer.removeListener('update:status', listener)
-  },
   onStatus: (cb: (status: RoomStatus) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, status: RoomStatus): void => cb(status)
     ipcRenderer.on('status', listener)

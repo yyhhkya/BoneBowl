@@ -16,8 +16,6 @@ export interface AppConfig {
   port: number
   overlayScale: number
   boneLifetimeSec: number
-  autoUpdate: boolean
-  updateFeedUrl: string
   gifts: GiftRule[]
 }
 
@@ -68,23 +66,6 @@ export interface QrLoginPoll {
   uid?: number
 }
 
-export type UpdateState =
-  | 'idle'
-  | 'checking'
-  | 'available'
-  | 'downloading'
-  | 'ready'
-  | 'none'
-  | 'error'
-  | 'dev'
-
-export interface UpdateStatus {
-  state: UpdateState
-  message?: string
-  percent?: number
-  version?: string
-}
-
 export interface BoneBowlAPI {
   getConfig: () => Promise<AppConfig>
   saveConfig: (patch: Partial<AppConfig>) => Promise<AppConfig>
@@ -99,10 +80,6 @@ export interface BoneBowlAPI {
   copyText: (text: string) => Promise<void>
   qrLogin: () => Promise<QrLoginInfo>
   qrPoll: (key: string) => Promise<QrLoginPoll>
-  getUpdateStatus: () => Promise<UpdateStatus>
-  checkUpdate: () => Promise<UpdateStatus>
-  installUpdate: () => Promise<void>
-  onUpdate: (cb: (status: UpdateStatus) => void) => () => void
   onStatus: (cb: (status: RoomStatus) => void) => () => void
   onGift: (cb: (gift: GiftEvent) => void) => () => void
   onConfig: (cb: (config: AppConfig) => void) => () => void
@@ -123,7 +100,5 @@ export const DEFAULT_CONFIG: AppConfig = {
   port: 17800,
   overlayScale: 1,
   boneLifetimeSec: 0,
-  autoUpdate: true,
-  updateFeedUrl: '',
   gifts: []
 }

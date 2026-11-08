@@ -19,7 +19,6 @@
     "@fontsource-variable/geist": "^5.3.0",
     "@fontsource-variable/geist-mono": "^5.3.0",
     "@phosphor-icons/react": "^2.1.10",
-    "electron-updater": "^6.8.11",
     "framer-motion": "^14.10.1",
     "pixi.js": "^8.22.0",
     "qrcode": "^1.5.4",
@@ -62,12 +61,6 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
-    },
-    "publish": [
-      {
-        "provider": "generic",
-        "url": "https://example.com/bonebowl/updates"
-      }
-    ]
+    }
   }
 }

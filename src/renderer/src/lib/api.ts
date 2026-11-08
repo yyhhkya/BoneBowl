@@ -8,8 +8,7 @@ import {
   type GiftCatalogItem,
   type GiftEvent,
   type QrLoginPoll,
-  type RoomStatus,
-  type UpdateStatus
+  type RoomStatus
 } from '../../../shared/types'
 
 const delay = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
@@ -31,8 +30,6 @@ let mockStatus: RoomStatus = { state: 'idle' }
 const statusListeners = new Set<(s: RoomStatus) => void>()
 const giftListeners = new Set<(g: GiftEvent) => void>()
 const configListeners = new Set<(c: AppConfig) => void>()
-const updateListeners = new Set<(s: UpdateStatus) => void>()
-let mockUpdateStatus: UpdateStatus = { state: 'none', message: '已是最新版本' }
 let mockQrPolls = 0
 let channel: BroadcastChannel | null = null
 if (typeof BroadcastChannel !== 'undefined') {
@@ -136,20 +133,6 @@ const mockApi: BoneBowlAPI = {
     if (mockQrPolls === 2) return { state: 'scanned', message: '已扫码，在手机上确认' }
     mockConfig.sessdata = 'mock-SESSDATA'
     return { state: 'success', sessdata: 'mock-SESSDATA', uname: '月见里的兔子', uid: 60861121 }
-  },
-  getUpdateStatus: async () => mockUpdateStatus,
-  checkUpdate: async () => {
-    mockUpdateStatus = { state: 'checking', message: '正在检查更新' }
-    updateListeners.forEach((cb) => cb(mockUpdateStatus))
-    await delay(900)
-    mockUpdateStatus = { state: 'none', message: '已是最新版本' }
-    updateListeners.forEach((cb) => cb(mockUpdateStatus))
-    return mockUpdateStatus
-  },
-  installUpdate: async () => undefined,
-  onUpdate: (cb) => {
-    updateListeners.add(cb)
-    return () => updateListeners.delete(cb)
   },
   onStatus: (cb) => {
     statusListeners.add(cb)

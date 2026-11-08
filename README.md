@@ -52,7 +52,6 @@ node node_modules/electron/install.js
 5. OBS 不需要色键，页面背景本身透明。不要用窗口采集。
 6. 直播期间保持应用运行；最小化不影响叠加层，关闭应用会断开连接与本地服务。
 
-自动更新：安装版（NSIS）支持在「应用更新」里填写 generic 更新源，启动时检查并下载；便携版 exe 需要手动替换。更新源目录需包含 `latest.yml` 与安装包，可用任意静态服务器。
 
 配置保存在 Electron 的 userData 目录（`config.json`），只在本机。
 

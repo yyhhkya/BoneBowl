@@ -6,7 +6,6 @@ import { OverlayServer } from './server'
 import { LiveClient, type SendGiftData } from './bilibili/client'
 import { fetchGiftCatalog, resetLoginCache } from './bilibili/api'
 import { generateQrLogin, pollQrLogin } from './bilibili/login'
-import { checkForUpdates, getUpdateStatus, installUpdate, wireUpdater } from './updater'
 import type {
   AppConfig,
   AppInfo,
@@ -204,12 +203,6 @@ function registerIpc(): void {
     }
     return result
   })
-
-  ipcMain.handle('update:status', () => getUpdateStatus())
-  ipcMain.handle('update:check', () => checkForUpdates())
-  ipcMain.handle('update:install', () => {
-    installUpdate()
-  })
 }
 
 async function restartServer(port: number): Promise<void> {
@@ -241,17 +234,12 @@ if (!gotLock) {
     await restartServer(config.port)
     createWindow()
     registerIpc()
-    wireUpdater()
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow()
     })
 
     if (config.autoConnect && config.roomId && config.sessdata) startClient({ roomId: config.roomId })
-
-    if (config.autoUpdate && config.updateFeedUrl && app.isPackaged) {
-      setTimeout(() => void checkForUpdates(), 4000)
-    }
   })
 
   app.on('window-all-closed', () => {

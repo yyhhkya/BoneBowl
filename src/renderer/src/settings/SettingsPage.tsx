@@ -1,13 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  ArrowClockwise,
   ArrowSquareOut,
   Broadcast,
   Check,
-  CloudArrowDown,
   Copy,
-  DownloadSimple,
   Flask,
   Gift,
   Plus,
@@ -27,9 +24,7 @@ import {
   type GiftRule,
   type QrLoginInfo,
   type QrLoginState,
-  type RoomStatus,
-  type UpdateState,
-  type UpdateStatus
+  type RoomStatus
 } from '../../../shared/types'
 import { getApi } from '../lib/api'
 import {
@@ -57,20 +52,8 @@ const NAV = [
   { id: 'room', index: '01', label: '直播间' },
   { id: 'gifts', index: '02', label: '礼物映射' },
   { id: 'overlay', index: '03', label: '叠加层' },
-  { id: 'update', index: '04', label: '应用更新' },
-  { id: 'activity', index: '05', label: '最近事件' }
+  { id: 'activity', index: '04', label: '最近事件' }
 ]
-
-const UPDATE_LABEL: Record<UpdateState, string> = {
-  idle: '尚未检查',
-  checking: '正在检查更新',
-  available: '发现新版本',
-  downloading: '正在下载',
-  ready: '下载完成，重启安装',
-  none: '已是最新版本',
-  error: '检查失败',
-  dev: '开发模式不检查更新'
-}
 
 function formatClock(ts: number): string {
   return new Date(ts).toLocaleTimeString('zh-CN', {
@@ -98,9 +81,6 @@ export function SettingsPage(): React.JSX.Element {
   const [qrState, setQrState] = useState<QrLoginState>('waiting')
   const [qrMessage, setQrMessage] = useState('等待扫码')
   const [qrBusy, setQrBusy] = useState(false)
-  const [updateStatus, setUpdateStatus] = useState<UpdateStatus>({ state: 'idle' })
-  const [updateBusy, setUpdateBusy] = useState(false)
-  const [feedText, setFeedText] = useState('')
 
   const pendingRef = useRef<Partial<AppConfig>>({})
   const saveTimerRef = useRef<number | undefined>(undefined)
@@ -151,10 +131,6 @@ export function SettingsPage(): React.JSX.Element {
         setRoomIdText(nextConfig.roomId ? String(nextConfig.roomId) : '')
         setSessdata(nextConfig.sessdata)
         setPortText(String(nextInfo.port))
-        setFeedText(nextConfig.updateFeedUrl)
-        void api.getUpdateStatus().then((nextUpdate) => {
-          if (alive) setUpdateStatus(nextUpdate)
-        })
       })
       .catch((error: unknown) => {
         if (!alive) return
@@ -165,13 +141,11 @@ export function SettingsPage(): React.JSX.Element {
     const offGift = api.onGift((gift) => {
       setActivity((prev) => [gift, ...prev].slice(0, 10))
     })
-    const offUpdate = api.onUpdate((next) => setUpdateStatus(next))
 
     return () => {
       alive = false
       offStatus()
       offGift()
-      offUpdate()
       window.clearTimeout(saveTimerRef.current)
       toastTimers.current.forEach((timer) => window.clearTimeout(timer))
     }
@@ -384,32 +358,6 @@ export function SettingsPage(): React.JSX.Element {
     }
   }, [qr, flushSave, pushToast])
 
-  const commitFeed = useCallback(() => {
-    const updateFeedUrl = feedText.trim()
-    setConfig((prev) => (prev ? { ...prev, updateFeedUrl } : prev))
-    void flushSave({ updateFeedUrl })
-  }, [feedText, flushSave])
-
-  const handleCheckUpdate = useCallback(async () => {
-    setUpdateBusy(true)
-    try {
-      const next = await api.checkUpdate()
-      setUpdateStatus(next)
-    } catch (error) {
-      pushToast(error instanceof Error ? error.message : '检查更新失败', 'error')
-    } finally {
-      setUpdateBusy(false)
-    }
-  }, [pushToast])
-
-  const handleInstallUpdate = useCallback(async () => {
-    try {
-      await api.installUpdate()
-    } catch (error) {
-      pushToast(error instanceof Error ? error.message : '安装更新失败', 'error')
-    }
-  }, [pushToast])
-
   const handleRetry = useCallback(() => {
     window.location.reload()
   }, [])
@@ -434,16 +382,6 @@ export function SettingsPage(): React.JSX.Element {
   }
 
   const host = status.state === 'connected' ? `房间 ${status.realRoomId}` : null
-  const updatePrimary =
-    updateStatus.state === 'available' && updateStatus.version
-      ? `发现新版本 ${updateStatus.version}`
-      : UPDATE_LABEL[updateStatus.state]
-  const updateSecondary =
-    updateStatus.state === 'ready'
-      ? '更新已下载，点击右侧按钮重启安装'
-      : updateStatus.message && updateStatus.message !== updatePrimary
-        ? updateStatus.message
-        : `当前版本 v${info.version}`
 
   return (
     <div className="relative min-h-[100dvh]">
@@ -948,94 +886,9 @@ export function SettingsPage(): React.JSX.Element {
             </div>
           </section>
 
-          <section id="update" className="mt-16 scroll-mt-8">
-            <SectionHeading
-              index="04"
-              eyebrow="app updates"
-              title="应用更新"
-              description="自动更新只对安装版生效，便携版 exe 需要手动替换。更新源需提供 latest.yml 和安装包。"
-              aside={
-                <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/80 px-3 py-1.5 font-mono text-[11px]">
-                  v{info.version}
-                </span>
-              }
-            />
-            <div className="mt-7 grid gap-9 lg:grid-cols-[minmax(0,1fr)_344px]">
-              <div className="grid gap-6">
-                <Field label="更新源地址" hint="留空则不检查更新。示例：https://你的域名/bonebowl/updates">
-                  <input
-                    className="field-input font-mono !text-[12px]"
-                    value={feedText}
-                    placeholder="https://example.com/bonebowl/updates"
-                    spellCheck={false}
-                    onChange={(event) => setFeedText(event.target.value)}
-                    onBlur={commitFeed}
-                  />
-                </Field>
-                <div className="flex items-center justify-between rounded-xl border border-line/80 px-3 py-2.5">
-                  <div>
-                    <div className="text-[12.5px] font-medium">自动检查更新</div>
-                    <div className="text-[11px] text-ink-soft">启动时检查并下载，安装前由你确认</div>
-                  </div>
-                  <Toggle
-                    checked={config.autoUpdate}
-                    label="自动检查更新"
-                    onChange={(autoUpdate) => {
-                      setConfig((prev) => (prev ? { ...prev, autoUpdate } : prev))
-                      void flushSave({ autoUpdate })
-                    }}
-                  />
-                </div>
-                <div className="rounded-2xl border border-line bg-surface/55 p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <div className="text-[12.5px] font-medium">{updatePrimary}</div>
-                      <div className="mt-0.5 text-[11px] text-ink-soft">{updateSecondary}</div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        variant="ghost"
-                        onClick={() => void handleCheckUpdate()}
-                        loading={updateBusy || updateStatus.state === 'checking'}
-                      >
-                        <ArrowClockwise size={15} weight="bold" />
-                        检查更新
-                      </Button>
-                      {updateStatus.state === 'ready' && (
-                        <Button variant="accent" onClick={() => void handleInstallUpdate()}>
-                          <DownloadSimple size={15} weight="bold" />
-                          重启安装
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                  {updateStatus.state === 'downloading' && (
-                    <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#efe0bd]">
-                      <div
-                        className="h-full rounded-full bg-ember transition-[width] duration-300"
-                        style={{ width: `${updateStatus.percent ?? 0}%` }}
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="rounded-2xl border border-line bg-surface/65 p-5">
-                <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.22em] text-ink-soft uppercase">
-                  <CloudArrowDown size={14} className="text-ember" />
-                  update notes
-                </div>
-                <ul className="mt-4 flex flex-col gap-3 text-[11.5px] leading-relaxed text-ink-soft">
-                  <li>安装版（NSIS）支持自动下载与重启安装；便携版请手动下载新版 exe。</li>
-                  <li>更新源目录需要 latest.yml 与对应安装包，可用任意静态服务器。</li>
-                  <li>检查失败时，多半是更新源不可访问或版本号没有递增。</li>
-                </ul>
-              </div>
-            </div>
-          </section>
-
           <section id="activity" className="mt-16 scroll-mt-8">
             <SectionHeading
-              index="05"
+              index="04"
               eyebrow="live feed"
               title="最近事件"
               description="最近十条礼物触发记录，用来确认映射是否生效。"

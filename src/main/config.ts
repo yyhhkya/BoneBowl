@@ -20,8 +20,6 @@ function normalize(raw: Partial<AppConfig>): AppConfig {
       typeof raw.boneLifetimeSec === 'number' && raw.boneLifetimeSec > 0
         ? Math.min(300, Math.round(raw.boneLifetimeSec))
         : 0,
-    autoUpdate: raw.autoUpdate !== false,
-    updateFeedUrl: typeof raw.updateFeedUrl === 'string' ? raw.updateFeedUrl.trim() : '',
     gifts: Array.isArray(raw.gifts)
       ? raw.gifts
           .filter((g): g is AppConfig['gifts'][number] => !!g && typeof g.giftId === 'number')
