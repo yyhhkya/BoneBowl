@@ -4,6 +4,7 @@ import {
   ArrowSquareOut,
   Broadcast,
   Check,
+  CircleNotch,
   Copy,
   Flask,
   Gift,
@@ -22,6 +23,7 @@ import {
   type GiftEvent,
   type GiftCatalogItem,
   type GiftRule,
+  type LoginCheck,
   type QrLoginInfo,
   type QrLoginState,
   type RoomStatus
@@ -82,6 +84,7 @@ export function SettingsPage(): React.JSX.Element {
   const [qrState, setQrState] = useState<QrLoginState>('waiting')
   const [qrMessage, setQrMessage] = useState('等待扫码')
   const [qrBusy, setQrBusy] = useState(false)
+  const [loginCheck, setLoginCheck] = useState<LoginCheck | null>(null)
   const [pickerOpen, setPickerOpen] = useState(false)
 
   const pendingRef = useRef<Partial<AppConfig>>({})
@@ -136,6 +139,29 @@ export function SettingsPage(): React.JSX.Element {
       document.removeEventListener('visibilitychange', onVisibility)
     }
   }, [flushSave])
+
+  useEffect(() => {
+    let alive = true
+    const cookie = sessdata.trim()
+    if (!cookie) {
+      setLoginCheck({ state: 'none' })
+      return () => {
+        alive = false
+      }
+    }
+    setLoginCheck({ state: 'checking' })
+    api
+      .verifyLogin()
+      .then((check) => {
+        if (alive) setLoginCheck(check)
+      })
+      .catch(() => {
+        if (alive) setLoginCheck({ state: 'error', message: '无法验证登录状态' })
+      })
+    return () => {
+      alive = false
+    }
+  }, [sessdata])
 
   useEffect(() => {
     let alive = true
@@ -228,16 +254,22 @@ export function SettingsPage(): React.JSX.Element {
       pushToast('连接直播间前先扫码登录 B站账号', 'error')
       return
     }
+    if (loginCheck?.state === 'invalid') {
+      setRoomError(null)
+      pushToast('登录已失效，请重新扫码', 'error')
+      return
+    }
     setRoomError(null)
     setBusy('connect')
     try {
-      await api.connect({ roomId, sessdata })
+      const next = await api.connect({ roomId, sessdata })
+      if (next.state === 'error') pushToast(next.message, 'error')
     } catch (error) {
       pushToast(error instanceof Error ? error.message : '连接失败', 'error')
     } finally {
       setBusy(null)
     }
-  }, [roomIdText, sessdata, pushToast])
+  }, [roomIdText, sessdata, loginCheck?.state, pushToast])
 
   const handleDisconnect = useCallback(async () => {
     setBusy('connect')
@@ -247,6 +279,18 @@ export function SettingsPage(): React.JSX.Element {
       setBusy(null)
     }
   }, [])
+
+  const refreshLogin = useCallback(() => {
+    if (!sessdata.trim()) {
+      setLoginCheck({ state: 'none' })
+      return
+    }
+    setLoginCheck({ state: 'checking' })
+    api
+      .verifyLogin()
+      .then((check) => setLoginCheck(check))
+      .catch(() => setLoginCheck({ state: 'error', message: '无法验证登录状态' }))
+  }, [sessdata])
 
   const activeRoomId = Number(roomIdText) || config?.roomId || null
 
@@ -304,6 +348,7 @@ export function SettingsPage(): React.JSX.Element {
 
   const handleLogout = useCallback(async () => {
     setSessdata('')
+    setLoginCheck({ state: 'none' })
     setConfig((prev) => (prev ? { ...prev, sessdata: '' } : prev))
     await flushSave({ sessdata: '' })
     if (status.state === 'connected') await api.disconnect()
@@ -407,6 +452,31 @@ export function SettingsPage(): React.JSX.Element {
   }
 
   const host = status.state === 'connected' ? `房间 ${status.realRoomId}` : null
+  const hasCookie = sessdata.trim().length > 0
+  const loginState = hasCookie ? (loginCheck?.state ?? 'checking') : 'none'
+  const loginUsable = hasCookie && loginState !== 'invalid'
+  const loginTitle =
+    loginState === 'valid'
+      ? loginCheck?.uname
+        ? `已登录 ${loginCheck.uname}`
+        : '已登录 B站账号'
+      : loginState === 'checking'
+        ? '正在验证登录'
+        : loginState === 'invalid'
+          ? '登录已失效'
+          : loginState === 'error'
+            ? '无法验证登录状态'
+            : '未登录'
+  const loginHint =
+    loginState === 'valid'
+      ? 'Cookie 已在线验证有效，可随时重新扫码。'
+      : loginState === 'checking'
+        ? '正在向 B站 检查 Cookie 是否有效…'
+        : loginState === 'invalid'
+          ? 'Cookie 已失效，重新扫码后才能连接直播间。'
+          : loginState === 'error'
+            ? loginCheck?.message || '网络异常，暂时无法验证登录状态。'
+            : '连接直播间必须登录，用 B站手机客户端扫码即可。'
 
   return (
     <div className="relative min-h-[100dvh]">
@@ -562,24 +632,39 @@ export function SettingsPage(): React.JSX.Element {
                     <div className="flex items-center gap-3">
                       <span
                         className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${
-                          sessdata.trim() ? 'bg-moss/12 text-moss' : 'bg-sun/35 text-[#7a5a10]'
+                          loginState === 'valid'
+                            ? 'bg-moss/12 text-moss'
+                            : loginState === 'invalid' || loginState === 'error'
+                              ? 'bg-clay/10 text-clay'
+                              : 'bg-sun/35 text-[#7a5a10]'
                         }`}
                       >
-                        {sessdata.trim() ? <Check size={16} weight="bold" /> : <SignIn size={16} weight="bold" />}
+                        {loginState === 'valid' ? (
+                          <Check size={16} weight="bold" />
+                        ) : loginState === 'checking' ? (
+                          <CircleNotch size={16} weight="bold" className="animate-spin" />
+                        ) : loginState === 'invalid' || loginState === 'error' ? (
+                          <WarningCircle size={16} weight="bold" />
+                        ) : (
+                          <SignIn size={16} weight="bold" />
+                        )}
                       </span>
                       <div>
-                        <div className="text-[13px] font-medium">
-                          {sessdata.trim() ? '已登录 B站账号' : '未登录'}
-                        </div>
-                        <div className="mt-0.5 text-[11px] leading-relaxed text-ink-soft">
-                          {sessdata.trim()
-                            ? 'Cookie 已保存在本机，可随时重新扫码。'
-                            : '连接直播间必须登录，用 B站手机客户端扫码即可。'}
-                        </div>
+                        <div className="text-[13px] font-medium">{loginTitle}</div>
+                        <div className="mt-0.5 text-[11px] leading-relaxed text-ink-soft">{loginHint}</div>
                       </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
-                      {sessdata.trim() && (
+                      {loginState === 'error' && (
+                        <Button
+                          variant="ghost"
+                          className="!px-3 !py-1.5 !text-[11.5px]"
+                          onClick={refreshLogin}
+                        >
+                          重试
+                        </Button>
+                      )}
+                      {hasCookie && (
                         <Button
                           variant="ghost"
                           className="!px-3 !py-1.5 !text-[11.5px]"
@@ -595,7 +680,7 @@ export function SettingsPage(): React.JSX.Element {
                         loading={qrBusy}
                       >
                         <QrCode size={14} />
-                        {sessdata.trim() ? '重新扫码' : '扫码登录'}
+                        {hasCookie ? '重新扫码' : '扫码登录'}
                       </Button>
                     </div>
                   </div>
@@ -629,10 +714,14 @@ export function SettingsPage(): React.JSX.Element {
                       已登录账号
                     </div>
                   )}
-                  {status.state !== 'connected' && !sessdata.trim() && (
+                  {status.state !== 'connected' && !loginUsable && (
                     <div className="mt-3 flex items-start gap-2 rounded-lg bg-sun/25 px-3 py-2 text-[11.5px] leading-relaxed text-[#7a5a10]">
                       <SignIn size={14} className="mt-0.5 shrink-0" />
-                      还没有登录，连接直播间前需要先扫码登录 B站账号。
+                      {loginState === 'invalid'
+                        ? '登录已失效，重新扫码后才能连接直播间。'
+                        : loginState === 'error'
+                          ? '暂时无法验证登录状态，重试后再连接。'
+                          : '还没有登录，连接直播间前需要先扫码登录 B站账号。'}
                     </div>
                   )}
                 </div>
@@ -646,7 +735,7 @@ export function SettingsPage(): React.JSX.Element {
                     <Button
                       variant="accent"
                       onClick={() => {
-                        if (!sessdata.trim()) {
+                        if (!loginUsable) {
                           void startQr()
                           return
                         }
@@ -654,10 +743,14 @@ export function SettingsPage(): React.JSX.Element {
                       }}
                       loading={busy === 'connect' || qrBusy}
                     >
-                      {sessdata.trim() ? <Broadcast size={15} weight="bold" /> : <QrCode size={15} weight="bold" />}
+                      {loginUsable ? (
+                        <Broadcast size={15} weight="bold" />
+                      ) : (
+                        <QrCode size={15} weight="bold" />
+                      )}
                       {status.state === 'connecting'
                         ? '连接中'
-                        : sessdata.trim()
+                        : loginUsable
                           ? '连接直播间'
                           : '扫码登录'}
                     </Button>

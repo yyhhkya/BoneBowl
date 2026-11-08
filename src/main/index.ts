@@ -5,7 +5,7 @@ import { loadConfig, saveConfig } from './config'
 import { OverlayServer } from './server'
 import { LiveClient, type SendGiftData } from './bilibili/client'
 import { fetchGiftCatalog, resetLoginCache } from './bilibili/api'
-import { generateQrLogin, pollQrLogin } from './bilibili/login'
+import { generateQrLogin, pollQrLogin, verifyLogin } from './bilibili/login'
 import type {
   AppConfig,
   AppInfo,
@@ -79,7 +79,7 @@ function stopClient(): void {
   liveClient = null
 }
 
-function startClient(opts: { roomId?: number | null; sessdata?: string } = {}): RoomStatus {
+async function startClient(opts: { roomId?: number | null; sessdata?: string } = {}): Promise<RoomStatus> {
   const config = loadConfig()
   const roomId = opts.roomId ?? config.roomId
   const sessdata = (opts.sessdata ?? config.sessdata).trim()
@@ -89,6 +89,12 @@ function startClient(opts: { roomId?: number | null; sessdata?: string } = {}): 
   }
   if (!sessdata) {
     emitStatus({ state: 'error', message: '连接直播间需要先扫码登录 B站账号' })
+    return lastStatus
+  }
+  emitStatus({ state: 'connecting', roomId })
+  const check = await verifyLogin(sessdata)
+  if (check.state === 'invalid') {
+    emitStatus({ state: 'error', message: '登录已失效，请重新扫码登录' })
     return lastStatus
   }
   stopClient()
@@ -162,7 +168,7 @@ function registerIpc(): void {
     return next
   })
 
-  ipcMain.handle('room:connect', (_event, opts?: { roomId?: number; sessdata?: string }) => {
+  ipcMain.handle('room:connect', async (_event, opts?: { roomId?: number; sessdata?: string }) => {
     const config = saveConfig({
       ...(opts?.roomId ? { roomId: opts.roomId } : {}),
       ...(typeof opts?.sessdata === 'string' ? { sessdata: opts.sessdata } : {})
@@ -196,6 +202,8 @@ function registerIpc(): void {
   })
 
   ipcMain.handle('login:qrcode', () => generateQrLogin())
+
+  ipcMain.handle('login:verify', () => verifyLogin(loadConfig().sessdata))
 
   ipcMain.handle('login:poll', async (_event, key: string) => {
     const result = await pollQrLogin(key)
@@ -242,7 +250,9 @@ if (!gotLock) {
       if (BrowserWindow.getAllWindows().length === 0) createWindow()
     })
 
-    if (config.autoConnect && config.roomId && config.sessdata) startClient({ roomId: config.roomId })
+    if (config.autoConnect && config.roomId && config.sessdata) {
+      void startClient({ roomId: config.roomId })
+    }
   })
 
   app.on('window-all-closed', () => {

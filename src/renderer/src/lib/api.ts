@@ -7,6 +7,7 @@ import {
   type BoneSize,
   type GiftCatalogItem,
   type GiftEvent,
+  type LoginCheck,
   type QrLoginPoll,
   type RoomStatus
 } from '../../../shared/types'
@@ -184,11 +185,16 @@ const mockApi: BoneBowlAPI = {
   qrPoll: async (): Promise<QrLoginPoll> => {
     mockQrPolls += 1
     await delay(300)
-    if (mockQrPolls <= 1) return { state: 'waiting', message: '等待扫码' }
-    if (mockQrPolls === 2) return { state: 'scanned', message: '已扫码，在手机上确认' }
-    mockConfig.sessdata = 'mock-SESSDATA'
-    persistMockConfig()
-    return { state: 'success', sessdata: 'mock-SESSDATA', uname: '月见里的兔子', uid: 60861121 }
+    // 预览没有真实扫码通道，保持等待直到二维码过期
+    if (mockQrPolls > 90) return { state: 'expired', message: '二维码已过期' }
+    return { state: 'waiting', message: '等待扫码' }
+  },
+  verifyLogin: async (): Promise<LoginCheck> => {
+    if (!mockConfig.sessdata.trim()) return { state: 'none', message: '还没有登录' }
+    if (mockConfig.sessdata === 'mock-SESSDATA') {
+      return { state: 'valid', uname: '月见里的兔子', uid: 60861121 }
+    }
+    return { state: 'invalid', message: '登录已失效，请重新扫码' }
   },
   onStatus: (cb) => {
     statusListeners.add(cb)

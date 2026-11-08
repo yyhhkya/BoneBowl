@@ -67,6 +67,15 @@ export interface QrLoginPoll {
   uid?: number
 }
 
+export type LoginCheckState = 'none' | 'checking' | 'valid' | 'invalid' | 'error'
+
+export interface LoginCheck {
+  state: LoginCheckState
+  uname?: string
+  uid?: number
+  message?: string
+}
+
 export interface BoneBowlAPI {
   getConfig: () => Promise<AppConfig>
   saveConfig: (patch: Partial<AppConfig>) => Promise<AppConfig>
@@ -81,6 +90,7 @@ export interface BoneBowlAPI {
   copyText: (text: string) => Promise<void>
   qrLogin: () => Promise<QrLoginInfo>
   qrPoll: (key: string) => Promise<QrLoginPoll>
+  verifyLogin: () => Promise<LoginCheck>
   onStatus: (cb: (status: RoomStatus) => void) => () => void
   onGift: (cb: (gift: GiftEvent) => void) => () => void
   onConfig: (cb: (config: AppConfig) => void) => () => void

@@ -4,6 +4,7 @@ import type {
   BoneBowlAPI,
   BoneSize,
   GiftEvent,
+  LoginCheck,
   QrLoginInfo,
   QrLoginPoll,
   RoomStatus
@@ -26,6 +27,7 @@ const api: BoneBowlAPI = {
   },
   qrLogin: () => ipcRenderer.invoke('login:qrcode') as Promise<QrLoginInfo>,
   qrPoll: (key: string) => ipcRenderer.invoke('login:poll', key) as Promise<QrLoginPoll>,
+  verifyLogin: () => ipcRenderer.invoke('login:verify') as Promise<LoginCheck>,
   onStatus: (cb: (status: RoomStatus) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, status: RoomStatus): void => cb(status)
     ipcRenderer.on('status', listener)

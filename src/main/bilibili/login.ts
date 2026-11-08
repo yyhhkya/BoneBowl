@@ -1,5 +1,5 @@
 import QRCode from 'qrcode'
-import type { QrLoginInfo, QrLoginPoll } from '../../shared/types'
+import type { LoginCheck, QrLoginInfo, QrLoginPoll } from '../../shared/types'
 
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
@@ -50,19 +50,26 @@ export async function generateQrLogin(): Promise<QrLoginInfo> {
   return { key, image, expiresIn: 180 }
 }
 
-async function fetchProfile(sessdata: string): Promise<{ uname?: string; uid?: number }> {
+/** 用 nav 接口在线校验 SESSDATA 是否仍然有效 */
+export async function verifyLogin(sessdata: string): Promise<LoginCheck> {
+  const s = sessdata.trim()
+  if (!s) return { state: 'none', message: '还没有登录' }
   try {
     const response = await fetch('https://api.bilibili.com/x/web-interface/nav', {
-      headers: {
-        'User-Agent': UA,
-        Referer: 'https://www.bilibili.com/',
-        Cookie: `SESSDATA=${sessdata}`
-      }
+      headers: { ...PASSPORT_HEADERS, Cookie: `SESSDATA=${s}` }
     })
-    const json = (await response.json()) as { data?: { uname?: string; mid?: number } }
-    return { uname: json.data?.uname, uid: json.data?.mid }
-  } catch {
-    return {}
+    if (!response.ok) {
+      return { state: 'error', message: `验证登录失败：HTTP ${response.status}` }
+    }
+    const json = (await response.json()) as {
+      data?: { isLogin?: boolean; uname?: string; mid?: number }
+    }
+    if (json.data?.isLogin && json.data.mid) {
+      return { state: 'valid', uname: json.data.uname, uid: json.data.mid }
+    }
+    return { state: 'invalid', message: '登录已失效，请重新扫码' }
+  } catch (error) {
+    return { state: 'error', message: error instanceof Error ? error.message : '无法验证登录状态' }
   }
 }
 
@@ -92,6 +99,9 @@ export async function pollQrLogin(key: string): Promise<QrLoginPoll> {
     }
   }
   if (!sessdata) return { state: 'error', message: '登录成功，但没有取到 SESSDATA' }
-  const profile = await fetchProfile(sessdata)
-  return { state: 'success', sessdata, uname: profile.uname, uid: profile.uid }
+  const check = await verifyLogin(sessdata)
+  if (check.state === 'invalid') {
+    return { state: 'error', message: '登录校验未通过，请重新扫码' }
+  }
+  return { state: 'success', sessdata, uname: check.uname, uid: check.uid }
 }
