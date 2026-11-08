@@ -270,15 +270,22 @@ if (!gotLock) {
   app.whenReady().then(async () => {
     const config = loadConfig()
     await restartServer(config.port)
-    createWindow()
     registerIpc()
+    createWindow()
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow()
     })
 
-    if (config.autoConnect && config.roomId && config.sessdata) {
-      void startClient({ roomId: config.roomId })
+    if (config.autoConnect) {
+      if (!config.roomId) {
+        console.log('[auto] 已开启自动连接，但没有填写直播间号')
+      } else if (!config.sessdata) {
+        console.log('[auto] 已开启自动连接，但没有登录 B站账号')
+      } else {
+        console.log(`[auto] 自动连接直播间 ${config.roomId}`)
+        void startClient({ roomId: config.roomId })
+      }
     }
   })
 

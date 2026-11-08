@@ -86,11 +86,21 @@ function emitGift(ruleId?: string, broadcast = true): void {
   if (broadcast) channel?.postMessage({ type: 'gift', gift })
 }
 
+let autoConnectStarted = false
+
+async function maybeAutoConnect(): Promise<void> {
+  if (autoConnectStarted) return
+  if (!mockConfig.autoConnect || !mockConfig.roomId || !mockConfig.sessdata.trim()) return
+  autoConnectStarted = true
+  await mockApi.connect({ roomId: mockConfig.roomId }).catch(() => undefined)
+}
+
 const mockApi: BoneBowlAPI = {
   getConfig: async () => {
     const response = await fetch('/dev-config')
     if (!response.ok) throw new Error('读取配置失败，请重启 dev 服务后重试')
     mockConfig = (await response.json()) as AppConfig
+    window.setTimeout(() => void maybeAutoConnect(), 0)
     return clone(mockConfig)
   },
   saveConfig: async (patch) => saveMockConfig(patch),

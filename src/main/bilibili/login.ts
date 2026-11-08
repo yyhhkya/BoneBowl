@@ -61,7 +61,8 @@ export async function verifyLogin(sessdata: string): Promise<LoginCheck> {
   if (!s) return { state: 'none', message: '还没有登录' }
   try {
     const response = await fetch('https://api.bilibili.com/x/web-interface/nav', {
-      headers: { ...PASSPORT_HEADERS, Cookie: `SESSDATA=${s}` }
+      headers: { ...PASSPORT_HEADERS, Cookie: `SESSDATA=${s}` },
+      signal: AbortSignal.timeout(8000)
     })
     if (!response.ok) {
       return { state: 'error', message: `验证登录失败：HTTP ${response.status}` }

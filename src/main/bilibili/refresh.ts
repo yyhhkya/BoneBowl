@@ -77,14 +77,17 @@ export async function refreshLoginIfNeeded(session: Session): Promise<Session | 
   try {
     const infoResponse = await fetch(
       `https://passport.bilibili.com/x/passport-login/web/cookie/info?csrf=${encodeURIComponent(biliJct)}`,
-      { headers }
+      { headers, signal: AbortSignal.timeout(8000) }
     )
     if (!infoResponse.ok) return null
     const info = (await infoResponse.json()) as CookieInfoResponse
     if (info.code !== 0 || !info.data?.refresh) return null
 
     const path = correspondPath(Number(info.data.timestamp) || Date.now())
-    const csrfResponse = await fetch(`https://www.bilibili.com/correspond/1/${path}`, { headers })
+    const csrfResponse = await fetch(`https://www.bilibili.com/correspond/1/${path}`, {
+      headers,
+      signal: AbortSignal.timeout(8000)
+    })
     if (!csrfResponse.ok) return null
     const html = await csrfResponse.text()
     const match = html.match(/<div[^>]*id="1-name"[^>]*>([^<]+)<\/div>/)
@@ -101,7 +104,8 @@ export async function refreshLoginIfNeeded(session: Session): Promise<Session | 
           refresh_csrf: refreshCsrf,
           source: 'main_web',
           refresh_token: refreshToken
-        })
+        }),
+        signal: AbortSignal.timeout(8000)
       }
     )
     if (!refreshResponse.ok) return null
@@ -122,7 +126,8 @@ export async function refreshLoginIfNeeded(session: Session): Promise<Session | 
           Cookie: cookieHeader({ sessdata: nextSessdata, biliJct: nextBiliJct }),
           'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: new URLSearchParams({ csrf: nextBiliJct, refresh_token: refreshToken })
+        body: new URLSearchParams({ csrf: nextBiliJct, refresh_token: refreshToken }),
+        signal: AbortSignal.timeout(8000)
       })
     } catch {
       // 确认失败不阻断新凭证保存
