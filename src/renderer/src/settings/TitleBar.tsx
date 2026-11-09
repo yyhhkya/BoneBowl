@@ -36,7 +36,9 @@ export function TitleBar(): React.JSX.Element {
         </span>
       </div>
       <div className="ml-auto flex items-center gap-2">
-        <StatusPill status={status} />
+        <span className="lg:hidden">
+          <StatusPill status={status} />
+        </span>
         <span className="mx-0.5 h-4 w-px bg-line" aria-hidden="true" />
         <button
           type="button"

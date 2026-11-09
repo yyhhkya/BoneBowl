@@ -34,6 +34,7 @@ import {
   Grain,
   MicroLabel,
   SectionHeading,
+  StatusPill,
   Toggle
 } from './ui'
 import { GiftRow } from './GiftRow'
@@ -486,6 +487,7 @@ export function SettingsPage(): React.JSX.Element {
     return <LoadingShell />
   }
 
+  const host = status.state === 'connected' ? `房间 ${status.realRoomId}` : null
   const hasCookie = sessdata.trim().length > 0
   const loginState = hasCookie ? (loginCheck?.state ?? 'checking') : 'none'
   const loginUsable = hasCookie && loginState !== 'invalid'
@@ -534,9 +536,23 @@ export function SettingsPage(): React.JSX.Element {
             ))}
           </nav>
 
-          <div className="mt-auto flex flex-col gap-2 px-1">
-            <p className="text-[10.5px] leading-relaxed text-ink-soft/75">更改自动保存在本机</p>
-            <div className="flex items-center justify-between font-mono text-[10px] tracking-wider text-[#b7a272]">
+          <div className="mt-auto flex flex-col gap-4">
+            <div className="rounded-2xl border border-line bg-surface/70 p-4">
+              <div className="flex items-center justify-between">
+                <MicroLabel>status</MicroLabel>
+                <StatusPill status={status} />
+              </div>
+              <p className="mt-3 text-[12px] leading-relaxed text-ink-soft">
+                {status.state === 'connected'
+                  ? `${host}，等待礼物消息`
+                  : status.state === 'connecting'
+                    ? '正在建立信息流连接'
+                    : status.state === 'error'
+                      ? status.message
+                      : '尚未连接直播间'}
+              </p>
+            </div>
+            <div className="flex items-center justify-between px-1 font-mono text-[10px] tracking-wider text-[#b7a272]">
               <span>v{info.version}</span>
               <span>{info.isDev ? 'dev' : 'local'}</span>
             </div>
