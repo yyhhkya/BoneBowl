@@ -16,7 +16,7 @@ export function GiftRow({
   const invalid = !rule.name.trim()
   return (
     <div
-      className={`group grid grid-cols-[minmax(0,200px)_minmax(0,1fr)_108px_220px_44px_76px] items-center gap-3 px-4 py-3.5 transition-colors hover:bg-white/55 ${
+      className={`group grid grid-cols-[200px_108px_minmax(0,1fr)_44px_76px] items-center gap-3 px-4 py-3.5 transition-colors hover:bg-white/55 ${
         rule.enabled ? '' : 'opacity-55'
       }`}
     >
@@ -30,8 +30,6 @@ export function GiftRow({
           onChange={(event) => onChange({ name: event.target.value })}
         />
       </div>
-
-      <div aria-hidden="true" />
 
       <div>
         <Stepper
