@@ -6,6 +6,7 @@ import type {
   LoginCheck,
   QrLoginInfo,
   QrLoginPoll,
+  RoomProfile,
   RoomStatus
 } from '../shared/types'
 
@@ -15,6 +16,8 @@ const api: BoneBowlAPI = {
   connect: (opts) => ipcRenderer.invoke('room:connect', opts),
   disconnect: () => ipcRenderer.invoke('room:disconnect'),
   getStatus: () => ipcRenderer.invoke('room:status'),
+  fetchRoomProfile: (roomId: number) =>
+    ipcRenderer.invoke('room:profile', roomId) as Promise<RoomProfile>,
   fetchGifts: (roomId: number) => ipcRenderer.invoke('gifts:fetch', roomId),
   testGift: (ruleId?: string) => ipcRenderer.invoke('test:gift', ruleId) as Promise<number>,
   getOverlayClients: () => ipcRenderer.invoke('overlay:clients') as Promise<number>,

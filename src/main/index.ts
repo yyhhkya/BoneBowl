@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { loadConfig, saveConfig } from './config'
 import { OverlayServer } from './server'
 import { LiveClient, type SendGiftData } from './bilibili/client'
-import { fetchGiftCatalog, resetLoginCache } from './bilibili/api'
+import { fetchGiftCatalog, fetchRoomProfile, resetLoginCache } from './bilibili/api'
 import { generateQrLogin, pollQrLogin, verifyLogin } from './bilibili/login'
 import { refreshLoginIfNeeded } from './bilibili/refresh'
 import type {
@@ -218,6 +218,8 @@ function registerIpc(): void {
   ipcMain.handle('gifts:fetch', async (_event, roomId: number) => {
     return fetchGiftCatalog(roomId, loadConfig().sessdata)
   })
+
+  ipcMain.handle('room:profile', async (_event, roomId: number) => fetchRoomProfile(roomId))
 
   ipcMain.handle('test:gift', (_event, ruleId?: string) => {
     return sendTestGift(ruleId)

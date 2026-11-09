@@ -76,12 +76,22 @@ export interface LoginCheck {
   message?: string
 }
 
+export interface RoomProfile {
+  roomId: number
+  shortId: number
+  uid: number
+  anchorName: string
+  face: string
+  liveStatus: number
+}
+
 export interface BoneBowlAPI {
   getConfig: () => Promise<AppConfig>
   saveConfig: (patch: Partial<AppConfig>) => Promise<AppConfig>
   connect: (opts?: { roomId?: number; sessdata?: string }) => Promise<RoomStatus>
   disconnect: () => Promise<RoomStatus>
   getStatus: () => Promise<RoomStatus>
+  fetchRoomProfile: (roomId: number) => Promise<RoomProfile>
   fetchGifts: (roomId: number) => Promise<GiftCatalogItem[]>
   testGift: (ruleId?: string) => Promise<number>
   getOverlayClients: () => Promise<number>

@@ -8,6 +8,7 @@ import {
   type GiftEvent,
   type LoginCheck,
   type QrLoginPoll,
+  type RoomProfile,
   type RoomStatus
 } from '../../../shared/types'
 
@@ -124,6 +125,36 @@ const mockApi: BoneBowlAPI = {
     return mockStatus
   },
   getStatus: async () => mockStatus,
+  fetchRoomProfile: async (roomId) => {
+    const initResponse = await fetch(
+      `/bili-live/room/v1/Room/room_init?id=${encodeURIComponent(String(roomId))}`
+    )
+    if (!initResponse.ok) throw new Error(`HTTP ${initResponse.status}`)
+    const init = (await initResponse.json()) as {
+      code: number
+      data?: { room_id?: number; short_id?: number; uid?: number; live_status?: number }
+    }
+    if (init.code !== 0 || !init.data?.room_id || !init.data.uid) {
+      throw new Error(init.code === 60004 ? '直播间不存在' : `无法识别直播间（code ${init.code}）`)
+    }
+    const masterResponse = await fetch(
+      `/bili-live/live_user/v1/Master/info?uid=${init.data.uid}`
+    )
+    if (!masterResponse.ok) throw new Error(`HTTP ${masterResponse.status}`)
+    const master = (await masterResponse.json()) as {
+      code: number
+      data?: { info?: { uname?: string; face?: string } }
+    }
+    if (master.code !== 0) throw new Error(`无法获取主播信息（code ${master.code}）`)
+    return {
+      roomId: init.data.room_id,
+      shortId: init.data.short_id ?? 0,
+      uid: init.data.uid,
+      anchorName: master.data?.info?.uname?.trim() ?? '',
+      face: master.data?.info?.face ?? '',
+      liveStatus: init.data.live_status ?? 0
+    } satisfies RoomProfile
+  },
   fetchGifts: async (roomId) => {
     if (!roomId) throw new Error('先填写直播间号')
     // 预览里通过 Vite 代理拉真实礼物面板，失败直接报错，不回退示例数据

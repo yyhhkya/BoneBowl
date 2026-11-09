@@ -23,6 +23,7 @@ import {
   type LoginCheck,
   type QrLoginInfo,
   type QrLoginState,
+  type RoomProfile,
   type RoomStatus
 } from '../../../shared/types'
 import { getApi } from '../lib/api'
@@ -72,6 +73,8 @@ export function SettingsPage(): React.JSX.Element {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [roomIdText, setRoomIdText] = useState('')
   const [roomError, setRoomError] = useState<string | null>(null)
+  const [roomProfile, setRoomProfile] = useState<RoomProfile | null>(null)
+  const [profileState, setProfileState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const [sessdata, setSessdata] = useState('')
   const [busy, setBusy] = useState<'connect' | null>(null)
   const [activity, setActivity] = useState<GiftEvent[]>([])
@@ -212,6 +215,35 @@ export function SettingsPage(): React.JSX.Element {
       toastTimers.current.forEach((timer) => window.clearTimeout(timer))
     }
   }, [])
+
+  useEffect(() => {
+    const roomId = Number(roomIdText)
+    if (!Number.isInteger(roomId) || roomId <= 0) {
+      setRoomProfile(null)
+      setProfileState('idle')
+      return
+    }
+    let cancelled = false
+    setRoomProfile(null)
+    setProfileState('loading')
+    const timer = window.setTimeout(() => {
+      api
+        .fetchRoomProfile(roomId)
+        .then((profile) => {
+          if (cancelled) return
+          setRoomProfile(profile)
+          setProfileState('ready')
+        })
+        .catch(() => {
+          if (cancelled) return
+          setProfileState('error')
+        })
+    }, 600)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
+  }, [roomIdText])
 
   const updateGift = useCallback(
     (id: string, patch: Partial<GiftRule>) => {
@@ -602,9 +634,48 @@ export function SettingsPage(): React.JSX.Element {
               <div className="grid gap-6">
                 <Field
                   label="直播间号"
-                  hint="房间短号或真实房间号都可以，连接时会自动转换。"
+                  hint={
+                    roomProfile && roomProfile.roomId !== Number(roomIdText)
+                      ? `真实房间号 ${roomProfile.roomId}`
+                      : '房间短号或真实房间号都可以，连接时会自动转换。'
+                  }
                   error={roomError}
                   htmlFor="room-id"
+                  action={
+                    profileState === 'loading' ? (
+                      <span className="inline-flex items-center gap-1.5 text-[11px] text-ink-soft">
+                        <CircleNotch size={12} weight="bold" className="animate-spin" />
+                        识别主播…
+                      </span>
+                    ) : roomProfile?.anchorName ? (
+                      <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/85 py-1 pr-2.5 pl-1 text-[11px]">
+                        {roomProfile.face && (
+                          <img
+                            src={roomProfile.face}
+                            alt=""
+                            referrerPolicy="no-referrer"
+                            className="h-5 w-5 rounded-full object-cover"
+                          />
+                        )}
+                        <span
+                          className="max-w-[150px] truncate font-medium text-ink"
+                          title={roomProfile.anchorName}
+                        >
+                          {roomProfile.anchorName}
+                        </span>
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            roomProfile.liveStatus === 1
+                              ? 'animate-breathe bg-moss'
+                              : 'bg-ink-soft/40'
+                          }`}
+                        />
+                        <span className="text-ink-soft">
+                          {roomProfile.liveStatus === 1 ? '直播中' : '未开播'}
+                        </span>
+                      </span>
+                    ) : undefined
+                  }
                 >
                   <input
                     id="room-id"

@@ -1,5 +1,5 @@
 import { keysFromNav, signWbi, type WbiKeys } from './wbi'
-import type { GiftCatalogItem } from '../../shared/types'
+import type { GiftCatalogItem, RoomProfile } from '../../shared/types'
 
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
@@ -101,16 +101,52 @@ export interface RoomInit {
   roomId: number
   shortId: number
   uid: number
+  liveStatus: number
 }
 
 export async function getRealRoomId(shortId: number): Promise<RoomInit> {
-  const json = await biliFetch<{ room_id: number; short_id: number; uid: number }>(
+  const json = await biliFetch<{
+    room_id: number
+    short_id: number
+    uid: number
+    live_status?: number
+  }>(
     `https://api.live.bilibili.com/room/v1/Room/room_init?id=${encodeURIComponent(String(shortId))}`
   )
   if (json.code !== 0 || !json.data?.room_id) {
     throw new Error(`直播间 ${shortId} 无效${json.code === 60004 ? '（不存在）' : `（code ${json.code}）`}`)
   }
-  return { roomId: json.data.room_id, shortId: json.data.short_id, uid: json.data.uid }
+  return {
+    roomId: json.data.room_id,
+    shortId: json.data.short_id,
+    uid: json.data.uid,
+    liveStatus: json.data.live_status ?? 0
+  }
+}
+
+const profileCache = new Map<number, { profile: RoomProfile; at: number }>()
+
+export async function fetchRoomProfile(roomId: number): Promise<RoomProfile> {
+  const cached = profileCache.get(roomId)
+  if (cached && Date.now() - cached.at < 60_000) return cached.profile
+  const room = await getRealRoomId(roomId)
+  const json = await biliFetch<{ info?: { uname?: string; face?: string } }>(
+    `https://api.live.bilibili.com/live_user/v1/Master/info?uid=${room.uid}`
+  )
+  if (json.code !== 0) throw new Error(`获取主播信息失败（code ${json.code}）`)
+  const profile: RoomProfile = {
+    roomId: room.roomId,
+    shortId: room.shortId,
+    uid: room.uid,
+    anchorName: json.data?.info?.uname?.trim() ?? '',
+    face: json.data?.info?.face ?? '',
+    liveStatus: room.liveStatus
+  }
+  const entry = { profile, at: Date.now() }
+  profileCache.set(roomId, entry)
+  profileCache.set(room.roomId, entry)
+  if (room.shortId) profileCache.set(room.shortId, entry)
+  return profile
 }
 
 export interface DanmuInfo {
