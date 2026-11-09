@@ -1,17 +1,19 @@
 import { Application, Container, Sprite, type Ticker } from 'pixi.js'
 import RAPIER from '@dimforge/rapier2d-compat'
 import type { GiftEvent } from '../../../shared/types'
-import { createBoneTexture, createBowlTextures, BOWL_PIXEL_RATIO, BOWL_TEXTURE_SCALE } from './sprites'
+import { createBoneTexture, createBowlTextures, BOWL_PIXEL_RATIO } from './sprites'
 
 const DESIGN_W = 1920
 const DESIGN_H = 1080
 const BOWL = { x: 960, y: 840 }
-/** 碗整体再缩小一点 */
-const BOWL_SHRINK = 0.7
+/** 碗宽固定为画布宽度的 1/4 */
+const BOWL_DESIGN_WIDTH = DESIGN_W / 4
+/** 碗沿外径（绘制坐标）：椭圆半径 316 加 24px 描边的一半 */
+const BOWL_RIM_DRAW_WIDTH = 656
+/** 绘制坐标 → 设计坐标；贴图按 BOWL_PIXEL_RATIO 倍绘制，碰撞体必须用这个比例 */
+const BOWL_WORLD_SCALE = BOWL_DESIGN_WIDTH / BOWL_RIM_DRAW_WIDTH
 /** 精灵缩放：纹理像素 → 设计坐标 */
-const BOWL_SPRITE_SCALE = BOWL_TEXTURE_SCALE * BOWL_SHRINK
-/** 绘制坐标 → 设计坐标：贴图按 BOWL_PIXEL_RATIO 倍绘制，碰撞体必须用这个比例 */
-const BOWL_WORLD_SCALE = BOWL_TEXTURE_SCALE * BOWL_PIXEL_RATIO * BOWL_SHRINK
+const BOWL_SPRITE_SCALE = BOWL_WORLD_SCALE / BOWL_PIXEL_RATIO
 const BOWL_LOCAL_CENTER = { x: 360, y: 190 }
 /** 画面底部的地面，接住溢出碗外的骨头，不让它们直接掉出画面 */
 const GROUND_Y = DESIGN_H - 40

@@ -76,9 +76,6 @@ export interface BowlTextures {
   front: Texture
 }
 
-/** 碗纹理按 2 倍绘制，精灵用这个比例缩回设计尺寸 */
-export const BOWL_TEXTURE_SCALE = 0.5
-
 /** 碗纹理画布倍率：绘制坐标 × 该倍率 = 纹理像素，碰撞体换算设计坐标时也要算上 */
 export const BOWL_PIXEL_RATIO = 2
 
