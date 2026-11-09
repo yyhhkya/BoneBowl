@@ -16,13 +16,13 @@ export function GiftRow({
   const invalid = !rule.name.trim()
   return (
     <div
-      className={`group grid gap-3 px-4 py-3.5 transition-colors hover:bg-white/55 sm:grid-cols-[minmax(0,1fr)_108px_220px_44px_76px] sm:items-center ${
+      className={`group grid grid-cols-[minmax(0,200px)_minmax(0,1fr)_108px_220px_44px_76px] items-center gap-3 px-4 py-3.5 transition-colors hover:bg-white/55 ${
         rule.enabled ? '' : 'opacity-55'
       }`}
     >
       <div className="flex min-w-0 items-center gap-2.5">
         <input
-          className={`field-input w-full min-w-0 !py-2 !text-[13px] sm:w-1/3 ${invalid ? '!border-clay/60' : ''}`}
+          className={`field-input w-full min-w-0 !py-2 !text-[13px] ${invalid ? '!border-clay/60' : ''}`}
           value={rule.name}
           placeholder="礼物名称"
           aria-label="礼物名称"
@@ -30,6 +30,8 @@ export function GiftRow({
           onChange={(event) => onChange({ name: event.target.value })}
         />
       </div>
+
+      <div aria-hidden="true" />
 
       <div>
         <Stepper

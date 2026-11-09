@@ -840,8 +840,9 @@ export function SettingsPage(): React.JSX.Element {
               }
             />
             <div className="mt-7 overflow-hidden rounded-2xl border border-line bg-surface/55">
-              <div className="hidden grid-cols-[minmax(0,1fr)_108px_220px_44px_76px] gap-3 border-b border-line/80 bg-[#fff4d6] px-4 py-2.5 font-mono text-[9.5px] tracking-[0.18em] text-ink-soft uppercase sm:grid">
+              <div className="grid grid-cols-[minmax(0,200px)_minmax(0,1fr)_108px_220px_44px_76px] gap-3 border-b border-line/80 bg-[#fff4d6] px-4 py-2.5 font-mono text-[9.5px] tracking-[0.18em] text-ink-soft uppercase">
                 <span>礼物名称</span>
+                <span />
                 <span>每份骨头</span>
                 <span>大小</span>
                 <span>启用</span>
