@@ -16,7 +16,7 @@ export function GiftRow({
   const invalid = !rule.name.trim()
   return (
     <div
-      className={`group grid grid-cols-[200px_108px_minmax(0,1fr)_44px_76px] items-center gap-3 px-4 py-3.5 transition-colors hover:bg-white/55 ${
+      className={`group grid grid-cols-[200px_108px_minmax(0,1fr)_44px_44px_40px] items-center gap-3 px-4 py-3.5 transition-colors hover:bg-white/55 ${
         rule.enabled ? '' : 'opacity-55'
       }`}
     >
@@ -66,14 +66,14 @@ export function GiftRow({
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-2 sm:justify-center">
+      <div className="flex items-center justify-center">
         <Toggle
           checked={rule.enabled}
           onChange={(enabled) => onChange({ enabled })}
           label={`${rule.name || '该礼物'} 启用`}
         />
       </div>
-      <div className="flex items-center justify-end gap-1">
+      <div className="flex items-center justify-center">
         <button
           type="button"
           onClick={onTest}
@@ -83,11 +83,13 @@ export function GiftRow({
         >
           <Flask size={15} />
         </button>
+      </div>
+      <div className="flex items-center justify-end">
         <button
           type="button"
           onClick={onRemove}
           aria-label={`删除 ${rule.name || '该礼物'}`}
-          className="focus-ring grid h-8 w-8 place-items-center rounded-lg text-ink-soft transition-colors hover:bg-clay/10 hover:text-clay sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+          className="focus-ring grid h-8 w-8 place-items-center rounded-lg text-ink-soft transition-colors hover:bg-clay/10 hover:text-clay group-hover:opacity-100 focus-visible:opacity-100 opacity-0"
         >
           <Trash size={15} />
         </button>
