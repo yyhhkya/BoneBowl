@@ -31,6 +31,7 @@ import {
   BONE_PATH,
   BoneMark,
   Button,
+  EditableNumber,
   Field,
   Grain,
   MicroLabel,
@@ -839,7 +840,7 @@ export function SettingsPage(): React.JSX.Element {
               }
             />
             <div className="mt-7 overflow-hidden rounded-2xl border border-line bg-surface/55">
-              <div className="hidden grid-cols-[minmax(0,1fr)_108px_132px_44px_32px] gap-3 border-b border-line/80 bg-[#fff4d6] px-4 py-2.5 font-mono text-[9.5px] tracking-[0.18em] text-ink-soft uppercase sm:grid">
+              <div className="hidden grid-cols-[minmax(0,1fr)_108px_176px_44px_76px] gap-3 border-b border-line/80 bg-[#fff4d6] px-4 py-2.5 font-mono text-[9.5px] tracking-[0.18em] text-ink-soft uppercase sm:grid">
                 <span>礼物名称</span>
                 <span>每份骨头</span>
                 <span>大小</span>
@@ -973,9 +974,20 @@ export function SettingsPage(): React.JSX.Element {
                         className="range-honey w-full min-w-0 flex-1"
                         aria-label="骨头消失时长"
                       />
-                      <span className="w-14 shrink-0 text-right font-mono text-[11.5px] tabular-nums text-ink-soft">
-                        {formatLifetime(config.boneLifetimeSec)}
-                      </span>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <EditableNumber
+                          value={config.boneLifetimeSec}
+                          min={0}
+                          max={3600}
+                          onChange={(boneLifetimeSec) => {
+                            setConfig((prev) => (prev ? { ...prev, boneLifetimeSec } : prev))
+                            scheduleSave({ boneLifetimeSec })
+                          }}
+                          label="骨头消失时长（秒）"
+                          className="field-input h-8 !w-[62px] !rounded-lg !px-1 !py-0 text-center font-mono text-[11.5px] tabular-nums"
+                        />
+                        <span className="text-[10.5px] text-ink-soft">秒</span>
+                      </div>
                     </div>
                   </Field>
                 </div>

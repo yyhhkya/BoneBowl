@@ -49,7 +49,7 @@ export function normalizeConfig(raw: Partial<AppConfig>): AppConfig {
               id: String(g.id || `rule-${g.giftId}-${Math.random().toString(36).slice(2, 8)}`),
               giftId: Number(g.giftId),
               name: typeof g.name === 'string' && g.name ? g.name : `礼物 ${g.giftId}`,
-              bones: Math.min(50, Math.max(1, Math.round(Number(g.bones) || 1))),
+              bones: Math.min(40, Math.max(1, Math.round(Number(g.bones) || 1))),
               scale: clampScale(scale),
               enabled: g.enabled !== false
             }

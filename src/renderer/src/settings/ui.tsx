@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { CircleNotch, Minus, Plus } from '@phosphor-icons/react'
 import type { RoomStatus } from '../../../shared/types'
@@ -65,6 +66,84 @@ export function Toggle({
   )
 }
 
+const formatNumber = (value: number, decimals: number): string =>
+  decimals > 0 ? value.toFixed(decimals) : String(value)
+
+const clampNumber = (value: number, min: number, max: number, decimals: number): number => {
+  const factor = 10 ** decimals
+  return Math.round(Math.min(max, Math.max(min, value)) * factor) / factor
+}
+
+/** 可直接键入的数值框：失焦或回车时按范围取整提交，Esc 撤销输入 */
+export function EditableNumber({
+  value,
+  onChange,
+  min,
+  max,
+  decimals = 0,
+  label,
+  className
+}: {
+  value: number
+  onChange: (next: number) => void
+  min: number
+  max: number
+  decimals?: number
+  label: string
+  className?: string
+}): React.JSX.Element {
+  const [draft, setDraft] = useState(() => formatNumber(value, decimals))
+  const [editing, setEditing] = useState(false)
+  const cancelRef = useRef(false)
+
+  useEffect(() => {
+    if (!editing) setDraft(formatNumber(value, decimals))
+  }, [value, decimals, editing])
+
+  const commit = (): void => {
+    if (cancelRef.current) {
+      cancelRef.current = false
+      setDraft(formatNumber(value, decimals))
+      return
+    }
+    const parsed = Number(draft.replace(/,/g, '.'))
+    if (!Number.isFinite(parsed) || draft.trim() === '') {
+      setDraft(formatNumber(value, decimals))
+      return
+    }
+    const next = clampNumber(parsed, min, max, decimals)
+    setDraft(formatNumber(next, decimals))
+    if (next !== value) onChange(next)
+  }
+
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      value={draft}
+      aria-label={label}
+      onFocus={(event) => {
+        setEditing(true)
+        event.currentTarget.select()
+      }}
+      onBlur={() => {
+        setEditing(false)
+        commit()
+      }}
+      onChange={(event) => setDraft(event.target.value)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') {
+          event.currentTarget.blur()
+        } else if (event.key === 'Escape') {
+          cancelRef.current = true
+          event.currentTarget.blur()
+        }
+      }}
+      className={className}
+    />
+  )
+}
+
 export function Stepper({
   value,
   onChange,
@@ -90,7 +169,14 @@ export function Stepper({
       >
         <Minus size={13} weight="bold" />
       </button>
-      <span className="min-w-7 text-center font-mono text-[13px] tabular-nums">{value}</span>
+      <EditableNumber
+        value={value}
+        onChange={onChange}
+        min={min}
+        max={max}
+        label={label}
+        className="w-10 rounded-md bg-transparent px-0 text-center font-mono text-[13px] tabular-nums outline-none focus:bg-white/80"
+      />
       <button
         type="button"
         aria-label={`${label} 增加`}
