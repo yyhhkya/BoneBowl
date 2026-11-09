@@ -79,11 +79,14 @@ export interface BowlTextures {
 /** 碗纹理按 2 倍绘制，精灵用这个比例缩回设计尺寸 */
 export const BOWL_TEXTURE_SCALE = 0.5
 
+/** 碗纹理画布倍率：绘制坐标 × 该倍率 = 纹理像素，碰撞体换算设计坐标时也要算上 */
+export const BOWL_PIXEL_RATIO = 2
+
 /** 碗：剖视风格，主体与碗口分两层，中间夹骨头 */
 export function createBowlTextures(): BowlTextures {
   const width = 720
   const height = 380
-  const pixelRatio = 2
+  const pixelRatio = BOWL_PIXEL_RATIO
 
   const back = makeCanvas(width * pixelRatio, height * pixelRatio)
   const b = back.ctx

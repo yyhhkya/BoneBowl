@@ -1,13 +1,17 @@
 import { Application, Container, Sprite, type Ticker } from 'pixi.js'
 import RAPIER from '@dimforge/rapier2d-compat'
 import type { GiftEvent } from '../../../shared/types'
-import { createBoneTexture, createBowlTextures, BOWL_TEXTURE_SCALE } from './sprites'
+import { createBoneTexture, createBowlTextures, BOWL_PIXEL_RATIO, BOWL_TEXTURE_SCALE } from './sprites'
 
 const DESIGN_W = 1920
 const DESIGN_H = 1080
 const BOWL = { x: 960, y: 840 }
-/** 碗纹理按 2 倍绘制后缩回设计尺寸，再整体缩小一点 */
-const BOWL_SCALE = BOWL_TEXTURE_SCALE * 0.85
+/** 碗整体再缩小一点 */
+const BOWL_SHRINK = 0.85
+/** 精灵缩放：纹理像素 → 设计坐标 */
+const BOWL_SPRITE_SCALE = BOWL_TEXTURE_SCALE * BOWL_SHRINK
+/** 绘制坐标 → 设计坐标：贴图按 BOWL_PIXEL_RATIO 倍绘制，碰撞体必须用这个比例 */
+const BOWL_WORLD_SCALE = BOWL_TEXTURE_SCALE * BOWL_PIXEL_RATIO * BOWL_SHRINK
 const BOWL_LOCAL_CENTER = { x: 360, y: 190 }
 /** 画面底部的地面，接住溢出碗外的骨头，不让它们直接掉出画面 */
 const GROUND_Y = DESIGN_H - 40
@@ -28,8 +32,8 @@ interface PendingBone {
 
 function toWorld(lx: number, ly: number): { x: number; y: number } {
   return {
-    x: BOWL.x + (lx - BOWL_LOCAL_CENTER.x) * BOWL_SCALE,
-    y: BOWL.y + (ly - BOWL_LOCAL_CENTER.y) * BOWL_SCALE
+    x: BOWL.x + (lx - BOWL_LOCAL_CENTER.x) * BOWL_WORLD_SCALE,
+    y: BOWL.y + (ly - BOWL_LOCAL_CENTER.y) * BOWL_WORLD_SCALE
   }
 }
 
@@ -105,7 +109,7 @@ export class BoneScene {
 
     const bowlBack = new Sprite(bowlTextures.back)
     bowlBack.anchor.set(0.5)
-    bowlBack.scale.set(BOWL_SCALE)
+    bowlBack.scale.set(BOWL_SPRITE_SCALE)
     bowlBack.position.set(BOWL.x, BOWL.y)
     this.root.addChild(bowlBack)
 
@@ -113,7 +117,7 @@ export class BoneScene {
 
     const bowlFront = new Sprite(bowlTextures.front)
     bowlFront.anchor.set(0.5)
-    bowlFront.scale.set(BOWL_SCALE)
+    bowlFront.scale.set(BOWL_SPRITE_SCALE)
     bowlFront.position.set(BOWL.x, BOWL.y)
     this.root.addChild(bowlFront)
 
@@ -151,7 +155,7 @@ export class BoneScene {
     const now = performance.now()
     const scale = Math.min(5, Math.max(0.5, event.scale || 1))
     for (let i = 0; i < event.bones; i += 1) {
-      const x = BOWL.x + (Math.random() * 2 - 1) * 200 * BOWL_SCALE
+      const x = BOWL.x + (Math.random() * 2 - 1) * 200 * BOWL_WORLD_SCALE
       this.pending.push({ at: now + i * 95, x, scale })
     }
   }
