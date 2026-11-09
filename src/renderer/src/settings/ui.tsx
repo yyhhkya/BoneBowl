@@ -207,25 +207,8 @@ export const STATUS_META: Record<
   error: { label: '连接异常', dot: 'bg-clay', text: 'text-clay', ring: 'bg-clay/20' }
 }
 
-export function StatusPill({
-  status,
-  compact = false
-}: {
-  status: RoomStatus
-  compact?: boolean
-}): React.JSX.Element {
+export function StatusPill({ status }: { status: RoomStatus }): React.JSX.Element {
   const meta = STATUS_META[status.state]
-  if (compact) {
-    return (
-      <span
-        className="inline-flex items-center gap-1.5 rounded-full border border-line/80 bg-surface/70 px-2 py-[3px] text-[10.5px] text-ink-soft"
-        title={status.state === 'error' ? status.message : meta.label}
-      >
-        <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
-        <span className={meta.text}>{meta.label}</span>
-      </span>
-    )
-  }
   return (
     <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/80 px-3 py-1.5 text-[12px] font-medium">
       <span className="relative flex h-2 w-2">
