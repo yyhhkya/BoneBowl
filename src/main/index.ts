@@ -54,6 +54,7 @@ function createWindow(): void {
     backgroundColor: '#f4f1ea',
     autoHideMenuBar: true,
     title: 'BoneBowl',
+    icon: join(app.getAppPath(), 'build/icon.png'),
     webPreferences: {
       preload: preloadFile,
       sandbox: false,
