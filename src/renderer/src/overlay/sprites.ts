@@ -76,16 +76,21 @@ export interface BowlTextures {
   front: Texture
 }
 
+/** 碗纹理按 2 倍绘制，精灵用这个比例缩回设计尺寸 */
+export const BOWL_TEXTURE_SCALE = 0.5
+
 /** 碗：剖视风格，主体与碗口分两层，中间夹骨头 */
 export function createBowlTextures(): BowlTextures {
   const width = 720
   const height = 380
+  const pixelRatio = 2
 
-  const back = makeCanvas(width, height)
+  const back = makeCanvas(width * pixelRatio, height * pixelRatio)
   const b = back.ctx
+  b.scale(pixelRatio, pixelRatio)
 
   b.save()
-  b.filter = 'blur(14px)'
+  b.filter = 'blur(28px)'
   b.fillStyle = 'rgba(28, 20, 10, 0.26)'
   b.beginPath()
   b.ellipse(360, 348, 276, 20, 0, 0, Math.PI * 2)
@@ -160,7 +165,7 @@ export function createBowlTextures(): BowlTextures {
   b.stroke()
 
   b.strokeStyle = 'rgba(190, 150, 60, 0.7)'
-  b.lineWidth = 2.5
+  b.lineWidth = 3
   b.beginPath()
   b.ellipse(360, 82, 316, 40, 0, 0, Math.PI * 2)
   b.stroke()
@@ -170,8 +175,9 @@ export function createBowlTextures(): BowlTextures {
   b.ellipse(360, 82, 256, 22, 0, 0, Math.PI * 2)
   b.fill()
 
-  const front = makeCanvas(width, height)
+  const front = makeCanvas(width * pixelRatio, height * pixelRatio)
   const f = front.ctx
+  f.scale(pixelRatio, pixelRatio)
 
   // 整个碗前壁：挡住碗口以下的骨头，只留碗口和前缘可见
   const wall = new Path2D()
@@ -216,32 +222,32 @@ export function createBowlTextures(): BowlTextures {
   f.restore()
   f.globalAlpha = 1
 
-  f.globalAlpha = 0.4
-  f.strokeStyle = 'rgba(150, 110, 30, 0.18)'
+  f.lineCap = 'round'
+
+  f.strokeStyle = 'rgba(150, 110, 30, 0.07)'
   f.lineWidth = 8
   f.beginPath()
-  f.ellipse(360, 92, 258, 22, 0, 0.05, Math.PI - 0.05)
+  f.ellipse(360, 92, 258, 22, 0, -0.02, Math.PI + 0.02)
   f.stroke()
-  f.globalAlpha = 1
 
+  // 前缘和背景碗沿用同一组颜色，圆头端点略微越界，避免半圈收尾处出现断色
   const frontRim = f.createLinearGradient(56, 0, 664, 0)
-  frontRim.addColorStop(0, '#f2d99c')
-  frontRim.addColorStop(0.3, '#fffdf3')
-  frontRim.addColorStop(0.7, '#fdf0c8')
-  frontRim.addColorStop(1, '#eed58f')
-  f.globalAlpha = 0.82
+  frontRim.addColorStop(0, '#f6e3ae')
+  frontRim.addColorStop(0.28, '#fffbef')
+  frontRim.addColorStop(0.55, '#fbeec6')
+  frontRim.addColorStop(1, '#ecd189')
   f.strokeStyle = frontRim
-  f.lineWidth = 22
+  f.lineWidth = 24
   f.beginPath()
-  f.ellipse(360, 82, 304, 34, 0, 0, Math.PI)
+  f.ellipse(360, 82, 304, 34, 0, -0.03, Math.PI + 0.03)
   f.stroke()
 
-  f.strokeStyle = 'rgba(190, 150, 60, 0.55)'
-  f.lineWidth = 2
+  f.strokeStyle = 'rgba(190, 150, 60, 0.5)'
+  f.lineWidth = 3.5
   f.beginPath()
-  f.ellipse(360, 95, 300, 32, 0, 0.08, Math.PI - 0.08)
+  f.ellipse(360, 95, 300, 32, 0, -0.02, Math.PI + 0.02)
   f.stroke()
-  f.globalAlpha = 1
+  f.lineCap = 'butt'
 
   return { back: Texture.from(back.canvas), front: Texture.from(front.canvas) }
 }

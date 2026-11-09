@@ -1,7 +1,7 @@
 import { Application, Container, Sprite, type Ticker } from 'pixi.js'
 import RAPIER from '@dimforge/rapier2d-compat'
 import type { GiftEvent } from '../../../shared/types'
-import { createBoneTexture, createBowlTextures } from './sprites'
+import { createBoneTexture, createBowlTextures, BOWL_TEXTURE_SCALE } from './sprites'
 
 const DESIGN_W = 1920
 const DESIGN_H = 1080
@@ -97,6 +97,7 @@ export class BoneScene {
 
     const bowlBack = new Sprite(bowlTextures.back)
     bowlBack.anchor.set(0.5)
+    bowlBack.scale.set(BOWL_TEXTURE_SCALE)
     bowlBack.position.set(BOWL.x, BOWL.y)
     this.root.addChild(bowlBack)
 
@@ -104,6 +105,7 @@ export class BoneScene {
 
     const bowlFront = new Sprite(bowlTextures.front)
     bowlFront.anchor.set(0.5)
+    bowlFront.scale.set(BOWL_TEXTURE_SCALE)
     bowlFront.position.set(BOWL.x, BOWL.y)
     this.root.addChild(bowlFront)
 
