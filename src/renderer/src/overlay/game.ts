@@ -7,7 +7,7 @@ const DESIGN_W = 1920
 const DESIGN_H = 1080
 const BOWL = { x: 960, y: 840 }
 /** 碗整体再缩小一点 */
-const BOWL_SHRINK = 0.85
+const BOWL_SHRINK = 0.7
 /** 精灵缩放：纹理像素 → 设计坐标 */
 const BOWL_SPRITE_SCALE = BOWL_TEXTURE_SCALE * BOWL_SHRINK
 /** 绘制坐标 → 设计坐标：贴图按 BOWL_PIXEL_RATIO 倍绘制，碰撞体必须用这个比例 */
