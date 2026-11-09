@@ -2,10 +2,6 @@
 
 B站直播礼物驱动的骨头掉落叠加层。观众送礼，骨头掉进碗里，通过 OBS 浏览器源叠到直播画面。
 
-![设置页](docs/screenshot-settings.png)
-
-![叠加层](docs/screenshot-overlay.png)
-
 ## 功能
 
 - 真实物理：PixiJS 渲染，Rapier2D 碰撞、堆叠、弹跳
