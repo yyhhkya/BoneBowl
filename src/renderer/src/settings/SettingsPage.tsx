@@ -34,7 +34,6 @@ import {
   Grain,
   MicroLabel,
   SectionHeading,
-  StatusPill,
   Toggle
 } from './ui'
 import { GiftRow } from './GiftRow'
@@ -470,7 +469,7 @@ export function SettingsPage(): React.JSX.Element {
 
   if (loadError) {
     return (
-      <div className="grid min-h-[calc(100dvh-2.75rem)] place-items-center px-6">
+      <div className="grid min-h-[calc(100dvh-3rem)] place-items-center px-6">
         <div className="max-w-md text-center">
           <WarningCircle size={28} className="mx-auto text-clay" />
           <h1 className="mt-4 text-2xl tracking-tight">配置读取失败</h1>
@@ -487,7 +486,6 @@ export function SettingsPage(): React.JSX.Element {
     return <LoadingShell />
   }
 
-  const host = status.state === 'connected' ? `房间 ${status.realRoomId}` : null
   const hasCookie = sessdata.trim().length > 0
   const loginState = hasCookie ? (loginCheck?.state ?? 'checking') : 'none'
   const loginUsable = hasCookie && loginState !== 'invalid'
@@ -515,23 +513,13 @@ export function SettingsPage(): React.JSX.Element {
             : '连接直播间必须登录，用 B站手机客户端扫码即可。'
 
   return (
-    <div className="relative min-h-[calc(100dvh-2.75rem)]">
+    <div className="relative min-h-[calc(100dvh-3rem)]">
       <Grain />
-      <div className="mx-auto grid min-h-[calc(100dvh-2.75rem)] w-full max-w-[1600px] lg:grid-cols-[264px_minmax(0,1fr)]">
-        <aside className="sticky top-11 hidden h-[calc(100dvh-2.75rem)] flex-col border-r border-line bg-white/55 px-7 py-8 lg:flex">
-          <div className="flex items-center gap-3">
-            <span className="grid h-9 w-9 place-items-center rounded-xl border border-line bg-surface text-ember">
-              <BoneMark className="h-5 w-5 -rotate-12" />
-            </span>
-            <div>
-              <div className="text-[15px] font-medium tracking-tight">BoneBowl</div>
-              <div className="font-mono text-[10px] tracking-[0.18em] text-ink-soft uppercase">
-                gift → bone
-              </div>
-            </div>
-          </div>
+      <div className="mx-auto grid min-h-[calc(100dvh-3rem)] w-full max-w-[1600px] lg:grid-cols-[264px_minmax(0,1fr)]">
+        <aside className="sticky top-12 hidden h-[calc(100dvh-3rem)] flex-col border-r border-line bg-white/55 px-7 py-8 lg:flex">
+          <MicroLabel>sections</MicroLabel>
 
-          <nav className="mt-12 flex flex-col gap-1">
+          <nav className="mt-4 flex flex-col gap-1">
             {NAV.map((item) => (
               <a
                 key={item.id}
@@ -546,20 +534,12 @@ export function SettingsPage(): React.JSX.Element {
             ))}
           </nav>
 
-          <div className="mt-auto rounded-2xl border border-line bg-surface/70 p-4">
-            <div className="flex items-center justify-between">
-              <MicroLabel>status</MicroLabel>
-              <StatusPill status={status} />
+          <div className="mt-auto flex flex-col gap-2 px-1">
+            <p className="text-[10.5px] leading-relaxed text-ink-soft/75">更改自动保存在本机</p>
+            <div className="flex items-center justify-between font-mono text-[10px] tracking-wider text-[#b7a272]">
+              <span>v{info.version}</span>
+              <span>{info.isDev ? 'dev' : 'local'}</span>
             </div>
-            <p className="mt-3 text-[12px] leading-relaxed text-ink-soft">
-              {status.state === 'connected'
-                ? `${host}，等待礼物消息`
-                : status.state === 'connecting'
-                  ? '正在建立信息流连接'
-                  : status.state === 'error'
-                    ? status.message
-                    : '尚未连接直播间'}
-            </p>
           </div>
         </aside>
 
@@ -978,7 +958,7 @@ export function SettingsPage(): React.JSX.Element {
             </div>
           </section>
 
-          <footer className="mt-16 flex flex-col gap-2 border-t border-line pt-6 font-mono text-[10px] tracking-wider text-[#b7a272] sm:flex-row sm:items-center sm:justify-between">
+          <footer className="mt-16 flex flex-col gap-2 border-t border-line pt-6 font-mono text-[10px] tracking-wider text-[#b7a272] sm:flex-row sm:items-center sm:justify-between lg:hidden">
             <span>BoneBowl v{info.version}</span>
             <span>{info.isDev ? 'dev' : 'local'} · 更改自动保存在本机</span>
           </footer>
@@ -1120,7 +1100,7 @@ function StagePreview({
 function LoadingShell(): React.JSX.Element {
   return (
     <div
-      className="min-h-[calc(100dvh-2.75rem)] px-6 py-10 md:px-16"
+      className="min-h-[calc(100dvh-3rem)] px-6 py-10 md:px-16"
       aria-busy="true"
       aria-label="正在读取配置"
     >
