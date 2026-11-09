@@ -14,6 +14,9 @@ import {
 
 const delay = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
 
+/** 浏览器预览展示的版本号，需与 package.json 保持一致 */
+const PREVIEW_VERSION = '0.2.0'
+
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T
 }
@@ -224,7 +227,7 @@ const mockApi: BoneBowlAPI = {
         return {
           port,
           overlayUrl: `${window.location.origin}/overlay?ws=${port}&source=obs`,
-          version: '0.1.0',
+          version: PREVIEW_VERSION,
           isDev: true
         }
       }
@@ -234,7 +237,7 @@ const mockApi: BoneBowlAPI = {
     return {
       port: Number(window.location.port) || 17800,
       overlayUrl: `${window.location.origin}/overlay?source=obs`,
-      version: '0.1.0',
+      version: PREVIEW_VERSION,
       isDev: true
     }
   },
