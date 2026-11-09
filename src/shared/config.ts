@@ -34,7 +34,7 @@ export function normalizeConfig(raw: Partial<AppConfig>): AppConfig {
     port: Number.isInteger(raw.port) && raw.port! >= 1024 && raw.port! <= 65535 ? raw.port! : DEFAULT_CONFIG.port,
     boneLifetimeSec:
       typeof raw.boneLifetimeSec === 'number' && raw.boneLifetimeSec > 0
-        ? Math.min(300, Math.round(raw.boneLifetimeSec))
+        ? Math.min(3600, Math.round(raw.boneLifetimeSec))
         : 0,
     gifts: Array.isArray(raw.gifts)
       ? raw.gifts

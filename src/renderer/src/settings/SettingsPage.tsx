@@ -66,6 +66,17 @@ function formatClock(ts: number): string {
   })
 }
 
+/** 骨头消失时长展示：0 = 永不，60 秒以上用分钟，最大 1 小时 */
+function formatLifetime(sec: number): string {
+  if (sec === 0) return '永不'
+  if (sec >= 3600) return '1 小时'
+  if (sec >= 60) {
+    const minutes = sec / 60
+    return `${Number.isInteger(minutes) ? minutes : minutes.toFixed(1)} 分钟`
+  }
+  return `${sec} 秒`
+}
+
 export function SettingsPage(): React.JSX.Element {
   const [config, setConfig] = useState<AppConfig | null>(null)
   const [info, setInfo] = useState<AppInfo | null>(null)
@@ -943,7 +954,7 @@ export function SettingsPage(): React.JSX.Element {
                     hint={
                       config.boneLifetimeSec === 0
                         ? '一直保留，直到达到 200 根上限。'
-                        : `${config.boneLifetimeSec} 秒后淡出，给新骨头腾位置。`
+                        : `${formatLifetime(config.boneLifetimeSec)}后淡出，给新骨头腾位置。`
                     }
                   >
                     <div className="flex h-[38px] items-center gap-3">
@@ -951,7 +962,7 @@ export function SettingsPage(): React.JSX.Element {
                         id="bone-lifetime"
                         type="range"
                         min={0}
-                        max={120}
+                        max={3600}
                         step={5}
                         value={config.boneLifetimeSec}
                         onChange={(event) => {
@@ -963,7 +974,7 @@ export function SettingsPage(): React.JSX.Element {
                         aria-label="骨头消失时长"
                       />
                       <span className="w-14 shrink-0 text-right font-mono text-[11.5px] tabular-nums text-ink-soft">
-                        {config.boneLifetimeSec === 0 ? '永不' : `${config.boneLifetimeSec}s`}
+                        {formatLifetime(config.boneLifetimeSec)}
                       </span>
                     </div>
                   </Field>
