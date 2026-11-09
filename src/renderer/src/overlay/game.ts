@@ -6,6 +6,11 @@ import { createBoneTexture, createBowlTextures, BOWL_TEXTURE_SCALE } from './spr
 const DESIGN_W = 1920
 const DESIGN_H = 1080
 const BOWL = { x: 960, y: 840 }
+/** 碗纹理按 2 倍绘制后缩回设计尺寸，再整体缩小一点 */
+const BOWL_SCALE = BOWL_TEXTURE_SCALE * 0.85
+const BOWL_LOCAL_CENTER = { x: 360, y: 190 }
+/** 画面底部的地面，接住溢出碗外的骨头，不让它们直接掉出画面 */
+const GROUND_Y = DESIGN_H - 40
 const MAX_BONES = 100
 
 interface Bone {
@@ -22,7 +27,10 @@ interface PendingBone {
 }
 
 function toWorld(lx: number, ly: number): { x: number; y: number } {
-  return { x: BOWL.x + lx - 360, y: BOWL.y + ly - 190 }
+  return {
+    x: BOWL.x + (lx - BOWL_LOCAL_CENTER.x) * BOWL_SCALE,
+    y: BOWL.y + (ly - BOWL_LOCAL_CENTER.y) * BOWL_SCALE
+  }
 }
 
 const CAVITY_POINTS: [number, number][] = [
@@ -97,7 +105,7 @@ export class BoneScene {
 
     const bowlBack = new Sprite(bowlTextures.back)
     bowlBack.anchor.set(0.5)
-    bowlBack.scale.set(BOWL_TEXTURE_SCALE)
+    bowlBack.scale.set(BOWL_SCALE)
     bowlBack.position.set(BOWL.x, BOWL.y)
     this.root.addChild(bowlBack)
 
@@ -105,7 +113,7 @@ export class BoneScene {
 
     const bowlFront = new Sprite(bowlTextures.front)
     bowlFront.anchor.set(0.5)
-    bowlFront.scale.set(BOWL_TEXTURE_SCALE)
+    bowlFront.scale.set(BOWL_SCALE)
     bowlFront.position.set(BOWL.x, BOWL.y)
     this.root.addChild(bowlFront)
 
@@ -117,6 +125,14 @@ export class BoneScene {
     })
     const bowlBody = this.world.createRigidBody(RAPIER.RigidBodyDesc.fixed())
     this.world.createCollider(RAPIER.ColliderDesc.polyline(cavityWorld).setFriction(0.8), bowlBody)
+
+    const groundBody = this.world.createRigidBody(RAPIER.RigidBodyDesc.fixed())
+    this.world.createCollider(
+      RAPIER.ColliderDesc.cuboid(DESIGN_W, 24)
+        .setTranslation(DESIGN_W / 2, GROUND_Y + 24)
+        .setFriction(0.9),
+      groundBody
+    )
 
     this.boneTexture = boneTexture
     this.layout()
@@ -135,7 +151,7 @@ export class BoneScene {
     const now = performance.now()
     const scale = Math.min(5, Math.max(0.5, event.scale || 1))
     for (let i = 0; i < event.bones; i += 1) {
-      const x = BOWL.x + (Math.random() * 2 - 1) * 200
+      const x = BOWL.x + (Math.random() * 2 - 1) * 200 * BOWL_SCALE
       this.pending.push({ at: now + i * 95, x, scale })
     }
   }

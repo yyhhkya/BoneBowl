@@ -22,6 +22,9 @@ export function OverlayPage(): React.JSX.Element {
     const scene = new BoneScene()
     sceneRef.current = scene
 
+    const lifetimeParam = Number(params.get('lifetime') ?? Number.NaN)
+    const explicitLifetime = Number.isFinite(lifetimeParam) && lifetimeParam >= 0
+
     const socketHostPort = (): string => {
       const explicit = params.get('ws')
       if (explicit) return explicit
@@ -78,7 +81,7 @@ export function OverlayPage(): React.JSX.Element {
           }
           if (payload.type === 'gift' && payload.gift) handleGift(payload.gift)
           if (payload.type === 'config') {
-            if (typeof payload.config?.boneLifetimeSec === 'number') {
+            if (!explicitLifetime && typeof payload.config?.boneLifetimeSec === 'number') {
               scene.setBoneLifetime(payload.config.boneLifetimeSec)
             }
           }
@@ -103,8 +106,7 @@ export function OverlayPage(): React.JSX.Element {
         }
         connectSocket()
 
-        const lifetimeParam = Number(params.get('lifetime') ?? Number.NaN)
-        if (Number.isFinite(lifetimeParam) && lifetimeParam >= 0) {
+        if (explicitLifetime) {
           scene.setBoneLifetime(lifetimeParam)
         }
 
