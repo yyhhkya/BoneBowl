@@ -942,7 +942,7 @@ export function SettingsPage(): React.JSX.Element {
                     htmlFor="bone-lifetime"
                     hint={
                       config.boneLifetimeSec === 0
-                        ? '一直保留，直到达到 100 根上限。'
+                        ? '一直保留，直到达到 200 根上限。'
                         : `${config.boneLifetimeSec} 秒后淡出，给新骨头腾位置。`
                     }
                   >

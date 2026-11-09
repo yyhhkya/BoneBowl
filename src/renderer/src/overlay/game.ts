@@ -17,7 +17,7 @@ const BOWL_SPRITE_SCALE = BOWL_WORLD_SCALE / BOWL_PIXEL_RATIO
 const BOWL_LOCAL_CENTER = { x: 360, y: 190 }
 /** 画面底部的地面，接住溢出碗外的骨头，不让它们直接掉出画面 */
 const GROUND_Y = DESIGN_H - 40
-const MAX_BONES = 100
+const MAX_BONES = 200
 
 interface Bone {
   body: RAPIER.RigidBody
