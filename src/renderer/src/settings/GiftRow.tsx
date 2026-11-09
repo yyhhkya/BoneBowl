@@ -16,7 +16,7 @@ export function GiftRow({
   const invalid = !rule.name.trim()
   return (
     <div
-      className={`group grid gap-3 px-4 py-3.5 transition-colors hover:bg-white/55 sm:grid-cols-[minmax(0,1fr)_108px_176px_44px_76px] sm:items-center ${
+      className={`group grid gap-3 px-4 py-3.5 transition-colors hover:bg-white/55 sm:grid-cols-[minmax(0,1fr)_108px_220px_44px_76px] sm:items-center ${
         rule.enabled ? '' : 'opacity-55'
       }`}
     >
