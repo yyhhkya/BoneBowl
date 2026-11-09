@@ -26,13 +26,15 @@ export function TitleBar(): React.JSX.Element {
 
   return (
     <header className="app-drag sticky top-0 z-40 flex h-11 shrink-0 items-center gap-2.5 border-b border-line/70 bg-paper/85 px-3 backdrop-blur-md">
-      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md border border-line bg-surface text-ember shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
-        <BoneMark className="h-3.5 w-3.5 -rotate-12" />
-      </span>
-      <span className="text-[12.5px] font-medium tracking-tight text-ink">BoneBowl</span>
-      <span className="font-mono text-[9.5px] tracking-[0.24em] text-ink-soft/60 uppercase sm:inline">
-        设置
-      </span>
+      <div className="flex items-center gap-2.5 lg:hidden">
+        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md border border-line bg-surface text-ember shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
+          <BoneMark className="h-3.5 w-3.5 -rotate-12" />
+        </span>
+        <span className="text-[12.5px] font-medium tracking-tight text-ink">BoneBowl</span>
+        <span className="font-mono text-[9.5px] tracking-[0.24em] text-ink-soft/60 uppercase">
+          设置
+        </span>
+      </div>
       <div className="ml-auto flex items-center gap-2">
         <span className="lg:hidden">
           <StatusPill status={status} compact />
