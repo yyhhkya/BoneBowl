@@ -502,7 +502,7 @@ export function SettingsPage(): React.JSX.Element {
 
   if (loadError) {
     return (
-      <div className="grid min-h-[calc(100dvh-3rem)] place-items-center px-6">
+      <div className="grid min-h-full place-items-center px-6">
         <div className="max-w-md text-center">
           <WarningCircle size={28} className="mx-auto text-clay" />
           <h1 className="mt-4 text-2xl tracking-tight">配置读取失败</h1>
@@ -547,10 +547,10 @@ export function SettingsPage(): React.JSX.Element {
             : '连接直播间必须登录，用 B站手机客户端扫码即可。'
 
   return (
-    <div className="relative min-h-[calc(100dvh-3rem)]">
+    <div className="relative min-h-full">
       <Grain />
-      <div className="mx-auto grid min-h-[calc(100dvh-3rem)] w-full max-w-[1600px] lg:grid-cols-[264px_minmax(0,1fr)]">
-        <aside className="sticky top-12 hidden h-[calc(100dvh-3rem)] flex-col border-r border-line bg-white/55 px-7 py-8 lg:flex">
+      <div className="mx-auto grid min-h-full w-full max-w-[1600px] lg:grid-cols-[264px_minmax(0,1fr)]">
+        <aside className="sticky top-0 hidden h-[calc(100dvh-3rem)] flex-col border-r border-line bg-white/55 px-7 py-8 lg:flex">
           <MicroLabel>sections</MicroLabel>
 
           <nav className="mt-4 flex flex-col gap-1">
@@ -625,7 +625,7 @@ export function SettingsPage(): React.JSX.Element {
             <StagePreview rules={config.gifts} latest={activity[0]} />
           </header>
 
-          <section id="room" className="mt-14 scroll-mt-20">
+          <section id="room" className="mt-14 scroll-mt-8">
             <SectionHeading
               title="直播间"
               description="填写开播直播间号，扫码登录后连接 B站信息流。"
@@ -808,7 +808,7 @@ export function SettingsPage(): React.JSX.Element {
             </div>
           </section>
 
-          <section id="gifts" className="mt-14 scroll-mt-20">
+          <section id="gifts" className="mt-14 scroll-mt-8">
             <SectionHeading
               title="礼物映射"
               description="按礼物名称匹配规则，每份骨头数量和大小单独可调，单条消息最多 40 根。每行右侧的烧瓶按钮可按该规则试投。"
@@ -881,7 +881,7 @@ export function SettingsPage(): React.JSX.Element {
             </div>
           </section>
 
-          <section id="overlay" className="mt-14 scroll-mt-20">
+          <section id="overlay" className="mt-14 scroll-mt-8">
             <SectionHeading
               title="叠加层"
               description="本地服务把叠加页交给 OBS，物理在页面里独立运行。窗口最小化不影响输出。"
@@ -993,7 +993,7 @@ export function SettingsPage(): React.JSX.Element {
             </div>
           </section>
 
-          <section id="activity" className="mt-14 scroll-mt-20">
+          <section id="activity" className="mt-14 scroll-mt-8">
             <SectionHeading
               title="最近事件"
               description="最近十条礼物触发记录，用来确认映射是否生效。"
@@ -1187,7 +1187,7 @@ function StagePreview({
 function LoadingShell(): React.JSX.Element {
   return (
     <div
-      className="min-h-[calc(100dvh-3rem)] px-6 py-10 md:px-16"
+      className="min-h-full px-6 py-10 md:px-16"
       aria-busy="true"
       aria-label="正在读取配置"
     >

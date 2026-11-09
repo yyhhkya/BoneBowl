@@ -19,9 +19,9 @@ export function App(): React.JSX.Element {
   return isOverlay ? (
     <OverlayPage />
   ) : (
-    <div className="flex min-h-[100dvh] flex-col">
+    <div className="flex h-[100dvh] flex-col overflow-hidden">
       <TitleBar />
-      <div className="min-w-0 flex-1">
+      <div className="min-h-0 flex-1 overflow-y-auto scroll-smooth">
         <SettingsPage />
       </div>
     </div>

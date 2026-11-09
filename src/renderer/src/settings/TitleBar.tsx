@@ -25,7 +25,7 @@ export function TitleBar(): React.JSX.Element {
   }, [])
 
   return (
-    <header className="app-drag sticky top-0 z-40 flex h-12 shrink-0 items-center gap-2.5 border-b border-line/70 bg-paper/85 px-3 backdrop-blur-md lg:pl-7">
+    <header className="app-drag relative z-30 flex h-12 shrink-0 items-center gap-2.5 border-b border-line/70 bg-paper/85 px-3 backdrop-blur-md lg:pl-7">
       <div className="flex items-center gap-2.5">
         <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg border border-line bg-surface text-ember shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
           <BoneMark className="h-4 w-4 -rotate-12" />
