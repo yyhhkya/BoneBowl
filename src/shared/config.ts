@@ -36,6 +36,10 @@ export function normalizeConfig(raw: Partial<AppConfig>): AppConfig {
       typeof raw.boneLifetimeSec === 'number' && raw.boneLifetimeSec > 0
         ? Math.min(3600, Math.round(raw.boneLifetimeSec))
         : 0,
+    bowlText:
+      typeof raw.bowlText === 'string'
+        ? raw.bowlText.replace(/\s+/g, ' ').trim().slice(0, 24)
+        : DEFAULT_CONFIG.bowlText,
     gifts: Array.isArray(raw.gifts)
       ? raw.gifts
           .filter((g): g is AppConfig['gifts'][number] => !!g && typeof g.giftId === 'number')

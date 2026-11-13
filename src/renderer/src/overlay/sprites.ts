@@ -1,4 +1,27 @@
 import { Texture } from 'pixi.js'
+import bowlFontUrl from '../assets/fonts/zhi-mang-xing.ttf?url'
+
+/** 碗壁字：拉丁字形走 Ink Free，中文按字体回退落到志莽行书 */
+const BOWL_FONT_STACK =
+  '"Ink Free", "ZhiMangXing", "Comic Sans MS", "Arial Rounded MT Bold", "Segoe UI", sans-serif'
+
+let bowlFontPromise: Promise<void> | null = null
+
+/** 碗壁中文字体只在画字前加载一次，失败时静默回退到系统字体 */
+export function ensureBowlFont(): Promise<void> {
+  if (!bowlFontPromise) {
+    bowlFontPromise = (async () => {
+      try {
+        const face = new FontFace('ZhiMangXing', `url(${bowlFontUrl})`)
+        await face.load()
+        document.fonts.add(face)
+      } catch (error) {
+        console.warn('[overlay] 碗壁字体加载失败，使用系统字体回退', error)
+      }
+    })()
+  }
+  return bowlFontPromise
+}
 
 function makeCanvas(width: number, height: number): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } {
   const canvas = document.createElement('canvas')
@@ -79,8 +102,33 @@ export interface BowlTextures {
 /** 碗纹理画布倍率：绘制坐标 × 该倍率 = 纹理像素，碰撞体换算设计坐标时也要算上 */
 export const BOWL_PIXEL_RATIO = 2
 
+/** 碗壁字标最大宽度（绘制坐标），超出的长文字按比例缩小字号 */
+const BOWL_TEXT_MAX_WIDTH = 520
+
+function drawBowlLabel(f: CanvasRenderingContext2D, text: string): void {
+  if (!text) return
+  const baseSize = 130
+  f.font = `700 ${baseSize}px ${BOWL_FONT_STACK}`
+  const measured = f.measureText(text).width
+  const size =
+    measured > BOWL_TEXT_MAX_WIDTH
+      ? Math.max(36, Math.floor((baseSize * BOWL_TEXT_MAX_WIDTH) / measured))
+      : baseSize
+  f.font = `700 ${size}px ${BOWL_FONT_STACK}`
+  f.globalAlpha = 0.85
+  f.fillStyle = '#5a4a26'
+  f.textAlign = 'center'
+  f.textBaseline = 'middle'
+  f.save()
+  f.translate(360, 230)
+  f.rotate(-0.05)
+  f.fillText(text, 0, 0)
+  f.restore()
+  f.globalAlpha = 1
+}
+
 /** 碗：剖视风格，主体与碗口分两层，中间夹骨头 */
-export function createBowlTextures(): BowlTextures {
+export function createBowlTextures(bowlText = ''): BowlTextures {
   const width = 720
   const height = 380
   const pixelRatio = BOWL_PIXEL_RATIO
@@ -210,17 +258,7 @@ export function createBowlTextures(): BowlTextures {
   f.globalAlpha = 1
 
   // 碗壁字标
-  f.globalAlpha = 0.85
-  f.fillStyle = '#5a4a26'
-  f.textAlign = 'center'
-  f.textBaseline = 'middle'
-  f.font = '700 130px "Ink Free", "Comic Sans MS", "Arial Rounded MT Bold", "Segoe UI", sans-serif'
-  f.save()
-  f.translate(360, 230)
-  f.rotate(-0.05)
-  f.fillText('FA', 0, 0)
-  f.restore()
-  f.globalAlpha = 1
+  drawBowlLabel(f, bowlText)
 
   f.lineCap = 'round'
 

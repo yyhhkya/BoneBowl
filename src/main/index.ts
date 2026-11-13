@@ -194,7 +194,7 @@ function registerIpc(): void {
     }
     server?.broadcast({
       type: 'config',
-      config: { boneLifetimeSec: next.boneLifetimeSec }
+      config: { boneLifetimeSec: next.boneLifetimeSec, bowlText: next.bowlText }
     })
     win?.webContents.send('config', next)
     return next
@@ -287,7 +287,8 @@ async function restartServer(port: number): Promise<void> {
   }
   server = new OverlayServer(rendererDir)
   server.setConfigProvider(() => ({
-    boneLifetimeSec: loadConfig().boneLifetimeSec
+    boneLifetimeSec: loadConfig().boneLifetimeSec,
+    bowlText: loadConfig().bowlText
   }))
   const actual = await server.start(port)
   if (actual !== port) console.warn(`[server] 端口 ${port} 被占用，改用 ${actual}`)

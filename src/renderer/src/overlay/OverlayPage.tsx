@@ -77,12 +77,15 @@ export function OverlayPage(): React.JSX.Element {
           const payload = JSON.parse(String(event.data)) as {
             type?: string
             gift?: GiftEvent
-            config?: { boneLifetimeSec?: number }
+            config?: { boneLifetimeSec?: number; bowlText?: string }
           }
           if (payload.type === 'gift' && payload.gift) handleGift(payload.gift)
           if (payload.type === 'config') {
             if (!explicitLifetime && typeof payload.config?.boneLifetimeSec === 'number') {
               scene.setBoneLifetime(payload.config.boneLifetimeSec)
+            }
+            if (typeof payload.config?.bowlText === 'string') {
+              scene.setBowlText(payload.config.bowlText)
             }
           }
         } catch {

@@ -72,7 +72,7 @@ function ensureOverlayService(): Promise<{ server: OverlayServer; port: number }
       const overlay = new OverlayServer(join(process.cwd(), 'out', 'renderer'))
       overlay.setConfigProvider(() => {
         const current = readConfig()
-        return { boneLifetimeSec: current.boneLifetimeSec }
+        return { boneLifetimeSec: current.boneLifetimeSec, bowlText: current.bowlText }
       })
       const port = await overlay.start(config.port || 17800)
       return { server: overlay, port }
@@ -163,7 +163,7 @@ export function devApiPlugin(): Plugin {
                 ?.then(({ server: overlay }) => {
                   overlay.broadcast({
                     type: 'config',
-                    config: { boneLifetimeSec: next.boneLifetimeSec }
+                    config: { boneLifetimeSec: next.boneLifetimeSec, bowlText: next.bowlText }
                   })
                 })
                 .catch(() => undefined)

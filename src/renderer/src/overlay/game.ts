@@ -1,7 +1,13 @@
 import { Application, Container, Sprite, type Ticker } from 'pixi.js'
 import RAPIER from '@dimforge/rapier2d-compat'
-import type { GiftEvent } from '../../../shared/types'
-import { createBoneTexture, createBowlTextures, BOWL_PIXEL_RATIO } from './sprites'
+import { DEFAULT_CONFIG, type GiftEvent } from '../../../shared/types'
+import {
+  createBoneTexture,
+  createBowlTextures,
+  ensureBowlFont,
+  BOWL_PIXEL_RATIO,
+  type BowlTextures
+} from './sprites'
 
 const DESIGN_W = 1920
 const DESIGN_H = 1080
@@ -85,6 +91,10 @@ export class BoneScene {
   private lastWidth = 0
   private lastHeight = 0
   private disposed = false
+  private bowlText: string = DEFAULT_CONFIG.bowlText
+  private bowlTextures: BowlTextures | null = null
+  private bowlBackSprite: Sprite | null = null
+  private bowlFrontSprite: Sprite | null = null
 
   async init(container: HTMLElement): Promise<void> {
     await this.app.init({
@@ -101,12 +111,14 @@ export class BoneScene {
     container.appendChild(this.app.canvas)
 
     await RAPIER.init()
+    await ensureBowlFont()
     this.world = new RAPIER.World({ x: 0, y: 1500 })
     this.world.timestep = 1 / 60
 
     this.app.stage.addChild(this.root)
 
-    const bowlTextures = createBowlTextures()
+    const bowlTextures = createBowlTextures(this.bowlText)
+    this.bowlTextures = bowlTextures
     const boneTexture = createBoneTexture()
 
     const bowlBack = new Sprite(bowlTextures.back)
@@ -114,6 +126,7 @@ export class BoneScene {
     bowlBack.scale.set(BOWL_SPRITE_SCALE)
     bowlBack.position.set(BOWL.x, BOWL.y)
     this.root.addChild(bowlBack)
+    this.bowlBackSprite = bowlBack
 
     this.root.addChild(this.boneLayer)
 
@@ -122,6 +135,7 @@ export class BoneScene {
     bowlFront.scale.set(BOWL_SPRITE_SCALE)
     bowlFront.position.set(BOWL.x, BOWL.y)
     this.root.addChild(bowlFront)
+    this.bowlFrontSprite = bowlFront
 
     const cavityWorld = new Float32Array(COLLIDER_POINTS.length * 2)
     COLLIDER_POINTS.forEach(([lx, ly], index) => {
@@ -150,6 +164,21 @@ export class BoneScene {
   /** 0 表示一直保留，直到达到骨头数量上限 */
   setBoneLifetime(seconds: number): void {
     this.lifetimeMs = Math.max(0, seconds * 1000)
+  }
+
+  /** 碗壁文字：先记账，场景就绪后按需重绘前壁贴图 */
+  setBowlText(text: string): void {
+    const next = text.trim()
+    if (next === this.bowlText) return
+    this.bowlText = next
+    if (!this.bowlFrontSprite || !this.bowlBackSprite) return
+    const previous = this.bowlTextures
+    const textures = createBowlTextures(next)
+    this.bowlTextures = textures
+    this.bowlBackSprite.texture = textures.back
+    this.bowlFrontSprite.texture = textures.front
+    previous?.back.destroy(true)
+    previous?.front.destroy(true)
   }
 
   drop(event: GiftEvent): void {

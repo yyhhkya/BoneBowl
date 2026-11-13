@@ -992,6 +992,25 @@ export function SettingsPage(): React.JSX.Element {
                     </div>
                   </Field>
                 </div>
+
+                <Field
+                  label="碗壁文字"
+                  htmlFor="bowl-text"
+                  hint="英文用 Ink Free，中文用手写体；留空则不显示文字。"
+                >
+                  <input
+                    id="bowl-text"
+                    className="field-input max-w-[280px]"
+                    value={config.bowlText}
+                    maxLength={24}
+                    placeholder="FA"
+                    onChange={(event) => {
+                      const bowlText = event.target.value
+                      setConfig((prev) => (prev ? { ...prev, bowlText } : prev))
+                      scheduleSave({ bowlText })
+                    }}
+                  />
+                </Field>
               </div>
 
               <div className="rounded-2xl border border-line bg-surface/65 p-5">

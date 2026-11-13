@@ -16,6 +16,8 @@ export interface AppConfig {
   autoConnect: boolean
   port: number
   boneLifetimeSec: number
+  /** 碗壁文字，留空则不显示；英文用 Ink Free，中文用志莽行书 */
+  bowlText: string
   gifts: GiftRule[]
 }
 
@@ -117,5 +119,6 @@ export const DEFAULT_CONFIG: AppConfig = {
   autoConnect: false,
   port: 17800,
   boneLifetimeSec: 0,
+  bowlText: 'FA',
   gifts: []
 }
