@@ -15,7 +15,7 @@ import {
 const delay = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
 
 /** 浏览器预览展示的版本号，需与 package.json 保持一致 */
-const PREVIEW_VERSION = '0.2.0'
+const PREVIEW_VERSION = '0.3.0'
 
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T
