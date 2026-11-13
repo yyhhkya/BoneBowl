@@ -133,7 +133,7 @@ function handleGift(data: SendGiftData): void {
     console.log(`[gift] 未匹配礼物「${giftName}」，已配置：${configured || '无'}`)
     return
   }
-  const count = Math.min(40, Math.max(1, Math.round(rule.bones * Math.max(1, data.num || 1))))
+  const count = Math.min(100, Math.max(1, Math.round(rule.bones * Math.max(1, data.num || 1))))
   console.log(`[gift] 匹配「${rule.name}」，掉落 ${count} 个${rule.item === 'poop' ? '粑粑' : '骨头'}`)
   const event: GiftEvent = {
     giftId: data.giftId,

@@ -826,7 +826,7 @@ export function SettingsPage(): React.JSX.Element {
           <section id="gifts" className="mt-14 scroll-mt-8">
             <SectionHeading
               title="礼物映射"
-              description="按礼物名称匹配规则，每份掉落物、数量和大小单独可调，单条消息最多 40 个。每行右侧的烧瓶按钮可按该规则试投。"
+              description="按礼物名称匹配规则，每份掉落物、数量和大小单独可调，单条消息最多 100 个。每行右侧的烧瓶按钮可按该规则试投。"
               aside={
                 config.gifts.length > 0 ? (
                   <div className="flex items-center gap-2">
