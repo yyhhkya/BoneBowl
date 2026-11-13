@@ -102,8 +102,8 @@ export interface BowlTextures {
 /** 碗纹理画布倍率：绘制坐标 × 该倍率 = 纹理像素，碰撞体换算设计坐标时也要算上 */
 export const BOWL_PIXEL_RATIO = 2
 
-/** 碗壁字标最大宽度（绘制坐标），超出的长文字按比例缩小字号 */
-const BOWL_TEXT_MAX_WIDTH = 520
+/** 碗壁字标最大宽度（绘制坐标），超出的长文字按比例缩小字号；两端还要留出碗沿余量 */
+const BOWL_TEXT_MAX_WIDTH = 420
 
 function drawBowlLabel(f: CanvasRenderingContext2D, text: string): void {
   if (!text) return
