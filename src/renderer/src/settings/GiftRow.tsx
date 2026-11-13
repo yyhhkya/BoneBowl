@@ -16,7 +16,7 @@ export function GiftRow({
   const invalid = !rule.name.trim()
   return (
     <div
-      className={`group grid grid-cols-[200px_108px_minmax(0,1fr)_44px_44px_40px] items-center gap-3 px-4 py-3.5 transition-colors hover:bg-white/55 ${
+      className={`group grid grid-cols-[190px_92px_76px_minmax(0,1fr)_44px_44px_40px] items-center gap-3 px-4 py-3.5 transition-colors hover:bg-white/55 ${
         rule.enabled ? '' : 'opacity-55'
       }`}
     >
@@ -36,9 +36,33 @@ export function GiftRow({
           value={rule.bones}
           max={40}
           onChange={(bones) => onChange({ bones })}
-          label={`${rule.name || '礼物'} 骨头数量`}
+          label={`${rule.name || '礼物'} 掉落数量`}
         />
-        <span className="sr-only">每份掉落 {rule.bones} 根骨头</span>
+        <span className="sr-only">每份掉落 {rule.bones} 个</span>
+      </div>
+
+      <div>
+        <div
+          role="group"
+          aria-label={`${rule.name || '礼物'} 掉落物`}
+          className="flex h-8 items-center gap-0.5 rounded-lg bg-[#faf2df] p-0.5"
+        >
+          {(['bone', 'poop'] as const).map((item) => (
+            <button
+              key={item}
+              type="button"
+              aria-pressed={rule.item === item}
+              onClick={() => onChange({ item })}
+              className={`focus-ring flex-1 rounded-md px-1 py-1 text-[11px] font-medium transition-colors ${
+                rule.item === item
+                  ? 'bg-surface text-ink shadow-[0_1px_2px_rgba(38,36,31,0.14)]'
+                  : 'text-ink-soft hover:text-ink'
+              }`}
+            >
+              {item === 'bone' ? '骨头' : '粑粑'}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex items-center gap-2">
@@ -48,7 +72,7 @@ export function GiftRow({
           max={5}
           step={0.05}
           value={rule.scale}
-          aria-label={`${rule.name || '礼物'} 骨头大小滑块`}
+          aria-label={`${rule.name || '礼物'} 掉落物大小滑块`}
           className="range-honey min-w-0 flex-1"
           onChange={(event) => onChange({ scale: Number(event.target.value) })}
         />
@@ -59,7 +83,7 @@ export function GiftRow({
             max={5}
             decimals={2}
             onChange={(scale) => onChange({ scale })}
-            label={`${rule.name || '礼物'} 骨头大小`}
+            label={`${rule.name || '礼物'} 掉落物大小`}
             className="field-input h-8 !w-[58px] !rounded-lg !px-1 !py-0 text-center font-mono text-[11px] tabular-nums"
           />
           <span className="font-mono text-[10px] text-ink-soft">×</span>

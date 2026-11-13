@@ -1,3 +1,6 @@
+/** 礼物掉落物：骨头或粑粑 */
+export type DropItem = 'bone' | 'poop'
+
 export interface GiftRule {
   id: string
   giftId: number
@@ -5,6 +8,8 @@ export interface GiftRule {
   bones: number
   /** 骨头大小倍率，0.5–2.0 */
   scale: number
+  /** 掉落物类型 */
+  item: DropItem
   enabled: boolean
 }
 
@@ -29,6 +34,7 @@ export interface GiftEvent {
   num: number
   bones: number
   scale: number
+  item: DropItem
   timestamp: number
 }
 

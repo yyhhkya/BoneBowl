@@ -1,9 +1,10 @@
 import { Application, Container, Sprite, type Ticker } from 'pixi.js'
 import RAPIER from '@dimforge/rapier2d-compat'
-import { DEFAULT_CONFIG, type GiftEvent } from '../../../shared/types'
+import { DEFAULT_CONFIG, type DropItem, type GiftEvent } from '../../../shared/types'
 import {
   createBoneTexture,
   createBowlTextures,
+  createPoopTexture,
   ensureBowlFont,
   BOWL_PIXEL_RATIO,
   type BowlTextures
@@ -36,6 +37,7 @@ interface PendingBone {
   at: number
   x: number
   scale: number
+  item: DropItem
 }
 
 function toWorld(lx: number, ly: number): { x: number; y: number } {
@@ -120,6 +122,7 @@ export class BoneScene {
     const bowlTextures = createBowlTextures(this.bowlText)
     this.bowlTextures = bowlTextures
     const boneTexture = createBoneTexture()
+    const poopTexture = createPoopTexture()
 
     const bowlBack = new Sprite(bowlTextures.back)
     bowlBack.anchor.set(0.5)
@@ -155,11 +158,13 @@ export class BoneScene {
     )
 
     this.boneTexture = boneTexture
+    this.poopTexture = poopTexture
     this.layout()
     this.app.ticker.add(this.tick)
   }
 
   private boneTexture!: import('pixi.js').Texture
+  private poopTexture!: import('pixi.js').Texture
 
   /** 0 表示一直保留，直到达到骨头数量上限 */
   setBoneLifetime(seconds: number): void {
@@ -185,13 +190,14 @@ export class BoneScene {
     if (!this.world) return
     const now = performance.now()
     const scale = Math.min(5, Math.max(0.5, event.scale || 1))
+    const item: DropItem = event.item === 'poop' ? 'poop' : 'bone'
     for (let i = 0; i < event.bones; i += 1) {
       const x = BOWL.x + (Math.random() * 2 - 1) * 200 * BOWL_WORLD_SCALE
-      this.pending.push({ at: now + i * 95, x, scale })
+      this.pending.push({ at: now + i * 95, x, scale, item })
     }
   }
 
-  private spawnBone(x: number, scale: number, now: number): void {
+  private spawnBone(x: number, scale: number, now: number, item: DropItem): void {
     const radius = 23 * scale
     const halfHeight = 42 * scale
 
@@ -207,14 +213,16 @@ export class BoneScene {
       body
     )
 
-    const sprite = new Sprite(this.boneTexture)
+    const texture = item === 'poop' ? this.poopTexture : this.boneTexture
+    const sprite = new Sprite(texture)
     sprite.anchor.set(0.5)
-    const visibleLength = (halfHeight + radius) * 2
-    sprite.scale.set(visibleLength / this.boneTexture.width)
+    // 骨头按碰撞体长轴铺满，粑粑是方脸，宽度按半径放大一些
+    const visibleLength = (halfHeight + radius) * (item === 'poop' ? 1.5 : 2)
+    sprite.scale.set(visibleLength / texture.width)
     sprite.position.set(x, 80)
     sprite.rotation = Math.random() * Math.PI
 
-    const shadow = new Sprite(this.boneTexture)
+    const shadow = new Sprite(texture)
     shadow.anchor.set(0.5)
     shadow.scale.copyFrom(sprite.scale)
     shadow.tint = 0x2a2118
@@ -249,7 +257,7 @@ export class BoneScene {
 
     while (this.pending.length > 0 && this.pending[0].at <= now) {
       const next = this.pending.shift()
-      if (next) this.spawnBone(next.x, next.scale, now)
+      if (next) this.spawnBone(next.x, next.scale, now, next.item)
     }
 
     this.accumulator += dt

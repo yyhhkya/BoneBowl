@@ -293,6 +293,7 @@ export function SettingsPage(): React.JSX.Element {
           name: '',
           bones: 1,
           scale: 1,
+          item: 'bone' as const,
           enabled: true
         }
       ]
@@ -385,6 +386,7 @@ export function SettingsPage(): React.JSX.Element {
             name,
             bones: 1,
             scale: 1,
+            item: 'bone' as const,
             enabled: true
           })
         }
@@ -823,7 +825,7 @@ export function SettingsPage(): React.JSX.Element {
           <section id="gifts" className="mt-14 scroll-mt-8">
             <SectionHeading
               title="礼物映射"
-              description="按礼物名称匹配规则，每份骨头数量和大小单独可调，单条消息最多 40 根。每行右侧的烧瓶按钮可按该规则试投。"
+              description="按礼物名称匹配规则，每份掉落物、数量和大小单独可调，单条消息最多 40 个。每行右侧的烧瓶按钮可按该规则试投。"
               aside={
                 config.gifts.length > 0 ? (
                   <div className="flex items-center gap-2">
@@ -840,9 +842,10 @@ export function SettingsPage(): React.JSX.Element {
               }
             />
             <div className="mt-7 overflow-hidden rounded-2xl border border-line bg-surface/55">
-              <div className="grid grid-cols-[200px_108px_minmax(0,1fr)_44px_44px_40px] gap-3 border-b border-line/80 bg-[#fff4d6] px-4 py-2.5 font-mono text-[9.5px] tracking-[0.18em] text-ink-soft uppercase">
+              <div className="grid grid-cols-[190px_92px_76px_minmax(0,1fr)_44px_44px_40px] gap-3 border-b border-line/80 bg-[#fff4d6] px-4 py-2.5 font-mono text-[9.5px] tracking-[0.18em] text-ink-soft uppercase">
                 <span>礼物名称</span>
-                <span>每份骨头</span>
+                <span>每份</span>
+                <span>掉落</span>
                 <span>大小</span>
                 <span>启用</span>
                 <span>试投</span>
@@ -955,7 +958,7 @@ export function SettingsPage(): React.JSX.Element {
                     htmlFor="bone-lifetime"
                     hint={
                       config.boneLifetimeSec === 0
-                        ? '一直保留，直到达到 200 根上限。'
+                        ? '一直保留，直到达到 200 个上限。'
                         : `${formatLifetime(config.boneLifetimeSec)}后淡出，给新骨头腾位置。`
                     }
                   >
@@ -1078,7 +1081,7 @@ export function SettingsPage(): React.JSX.Element {
                           <span className="font-medium">{gift.giftName}</span>
                         </span>
                         <span className="rounded-full bg-ember/10 px-2.5 py-1 font-mono text-[10.5px] text-ember">
-                          +{gift.bones} 骨
+                          +{gift.bones} {gift.item === 'poop' ? '粑' : '骨'}
                         </span>
                       </motion.li>
                     ))}

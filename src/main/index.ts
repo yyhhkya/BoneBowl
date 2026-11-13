@@ -134,7 +134,7 @@ function handleGift(data: SendGiftData): void {
     return
   }
   const count = Math.min(40, Math.max(1, Math.round(rule.bones * Math.max(1, data.num || 1))))
-  console.log(`[gift] 匹配「${rule.name}」，掉落 ${count} 根骨头`)
+  console.log(`[gift] 匹配「${rule.name}」，掉落 ${count} 个${rule.item === 'poop' ? '粑粑' : '骨头'}`)
   const event: GiftEvent = {
     giftId: data.giftId,
     giftName: data.giftName || rule.name,
@@ -143,6 +143,7 @@ function handleGift(data: SendGiftData): void {
     num: data.num || 1,
     bones: count,
     scale: rule.scale,
+    item: rule.item,
     timestamp: data.timestamp ? data.timestamp * 1000 : Date.now()
   }
   const sent = server?.broadcast({ type: 'gift', gift: event }) ?? 0
@@ -159,7 +160,7 @@ function pickTestRule(ruleId?: string): GiftRule {
     if (matched) return matched
   }
   const enabled = config.gifts.filter((g) => g.enabled)
-  return enabled[0] ?? { id: 'test', giftId: 0, name: '测试骨头', bones: 1, scale: 1, enabled: true }
+  return enabled[0] ?? { id: 'test', giftId: 0, name: '测试骨头', bones: 1, scale: 1, item: 'bone', enabled: true }
 }
 
 function sendTestGift(ruleId?: string): number {
@@ -172,6 +173,7 @@ function sendTestGift(ruleId?: string): number {
     num: 1,
     bones: Math.max(1, rule.bones),
     scale: rule.scale,
+    item: rule.item,
     timestamp: Date.now()
   }
   const sent = server?.broadcast({ type: 'gift', gift: event }) ?? 0

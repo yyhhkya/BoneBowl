@@ -32,17 +32,16 @@ function makeCanvas(width: number, height: number): { canvas: HTMLCanvasElement;
   return { canvas, ctx }
 }
 
-/** 骨头精灵：用系统 🦴 字形绘制，转正并裁剪到内容边界 */
-export function createBoneTexture(): Texture {
+/** 把 emoji 字形画成贴图，再按不透明像素裁剪到内容边界 */
+function createEmojiTexture(emoji: string, rotateRad: number, fallback: () => Texture): Texture {
   const SIZE = 768
   const { canvas, ctx } = makeCanvas(SIZE, SIZE)
   ctx.font = '520px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  // Segoe UI Emoji 的骨形约倾斜 44.8°，转正后长轴水平
   ctx.translate(SIZE / 2, SIZE / 2)
-  ctx.rotate((44.78 * Math.PI) / 180)
-  ctx.fillText('🦴', 0, 0)
+  if (rotateRad) ctx.rotate(rotateRad)
+  ctx.fillText(emoji, 0, 0)
 
   const data = ctx.getImageData(0, 0, SIZE, SIZE).data
   let minX = SIZE
@@ -60,38 +59,73 @@ export function createBoneTexture(): Texture {
       if (y > maxY) maxY = y
     }
   }
-  if (maxX < 0) {
-    // 系统没有 emoji 字形时退化为矢量骨形，避免叠加层直接报错
-    const fallback = makeCanvas(240, 120)
-    const g = fallback.ctx
-    g.lineJoin = 'round'
-    const bone = new Path2D()
-    bone.roundRect(52, 38, 136, 44, 22)
-    for (const [cx, cy] of [
-      [52, 38],
-      [52, 82],
-      [188, 38],
-      [188, 82]
-    ]) {
-      bone.moveTo(cx + 18, cy)
-      bone.arc(cx, cy, 18, 0, Math.PI * 2)
-    }
-    g.strokeStyle = 'rgba(126, 112, 148, 0.65)'
-    g.lineWidth = 4
-    g.stroke(bone)
-    const fill = g.createLinearGradient(0, 30, 0, 90)
-    fill.addColorStop(0, '#faf8ff')
-    fill.addColorStop(1, '#ded6ee')
-    g.fillStyle = fill
-    g.fill(bone)
-    return Texture.from(fallback.canvas)
-  }
+  if (maxX < 0) return fallback()
 
   const width = maxX - minX + 1
   const height = maxY - minY + 1
   const out = makeCanvas(width, height)
   out.ctx.drawImage(canvas, minX, minY, width, height, 0, 0, width, height)
   return Texture.from(out.canvas)
+}
+
+/** 系统没有 emoji 字形时退化为矢量骨形，避免叠加层直接报错 */
+function createFallbackBone(): Texture {
+  const fallback = makeCanvas(240, 120)
+  const g = fallback.ctx
+  g.lineJoin = 'round'
+  const bone = new Path2D()
+  bone.roundRect(52, 38, 136, 44, 22)
+  for (const [cx, cy] of [
+    [52, 38],
+    [52, 82],
+    [188, 38],
+    [188, 82]
+  ]) {
+    bone.moveTo(cx + 18, cy)
+    bone.arc(cx, cy, 18, 0, Math.PI * 2)
+  }
+  g.strokeStyle = 'rgba(126, 112, 148, 0.65)'
+  g.lineWidth = 4
+  g.stroke(bone)
+  const fill = g.createLinearGradient(0, 30, 0, 90)
+  fill.addColorStop(0, '#faf8ff')
+  fill.addColorStop(1, '#ded6ee')
+  g.fillStyle = fill
+  g.fill(bone)
+  return Texture.from(fallback.canvas)
+}
+
+/** 骨头精灵：用系统 🦴 字形绘制，转正并裁剪到内容边界 */
+export function createBoneTexture(): Texture {
+  // Segoe UI Emoji 的骨形约倾斜 44.8°，转正后长轴水平
+  return createEmojiTexture('🦴', (44.78 * Math.PI) / 180, createFallbackBone)
+}
+
+/** 无 emoji 字形时的备用粑粑：三层棕色椭圆堆叠 */
+function createFallbackPoop(): Texture {
+  const fallback = makeCanvas(240, 220)
+  const g = fallback.ctx
+  g.fillStyle = '#8a5a2b'
+  for (const [cy, rx, ry] of [
+    [180, 92, 34],
+    [130, 70, 30],
+    [88, 46, 22]
+  ]) {
+    g.beginPath()
+    g.ellipse(120, cy, rx, ry, 0, 0, Math.PI * 2)
+    g.fill()
+  }
+  g.beginPath()
+  g.moveTo(120, 26)
+  g.bezierCurveTo(150, 48, 140, 72, 120, 82)
+  g.bezierCurveTo(100, 72, 90, 48, 120, 26)
+  g.fill()
+  return Texture.from(fallback.canvas)
+}
+
+/** 粑粑精灵：系统 💩 字形，正立不旋转 */
+export function createPoopTexture(): Texture {
+  return createEmojiTexture('💩', 0, createFallbackPoop)
 }
 
 export interface BowlTextures {

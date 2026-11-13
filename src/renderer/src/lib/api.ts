@@ -80,6 +80,7 @@ function buildMockGift(ruleId?: string): GiftEvent {
     num: 1,
     bones: rule?.bones ?? 3,
     scale: rule?.scale ?? 1,
+    item: rule?.item ?? 'bone',
     timestamp: Date.now()
   }
 }

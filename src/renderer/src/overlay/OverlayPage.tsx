@@ -135,6 +135,7 @@ export function OverlayPage(): React.JSX.Element {
               num: 1,
               bones: scale > 1.2 ? 5 : scale < 0.9 ? 2 : 3,
               scale,
+              item: tick % 4 === 0 ? 'poop' : 'bone',
               timestamp: Date.now()
             })
           }, 1500)

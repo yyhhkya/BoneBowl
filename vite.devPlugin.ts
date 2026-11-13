@@ -98,6 +98,7 @@ function buildTestGift(ruleId?: string): GiftEvent {
     num: 1,
     bones: Math.max(1, rule?.bones ?? 1),
     scale: rule?.scale ?? 1,
+    item: rule?.item ?? 'bone',
     timestamp: Date.now()
   }
 }

@@ -131,7 +131,7 @@ export function GiftPickerModal({
             </div>
             <h2 className="mt-2 text-[22px] tracking-tight">选择礼物</h2>
             <p className="mt-1.5 text-[11.5px] leading-relaxed text-ink-soft">
-              点击礼物加入映射，每份默认掉落 1 根骨头，之后可以再调。同名礼物自动合并。
+              点击礼物加入映射，每份默认掉落 1 个骨头，之后可以再调。同名礼物自动合并。
             </p>
           </div>
           <button

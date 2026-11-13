@@ -55,6 +55,7 @@ export function normalizeConfig(raw: Partial<AppConfig>): AppConfig {
               name: typeof g.name === 'string' && g.name ? g.name : `礼物 ${g.giftId}`,
               bones: Math.min(40, Math.max(1, Math.round(Number(g.bones) || 1))),
               scale: clampScale(scale),
+              item: g.item === 'poop' ? 'poop' : 'bone',
               enabled: g.enabled !== false
             }
           })
