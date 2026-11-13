@@ -108,13 +108,14 @@ const BOWL_TEXT_MAX_WIDTH = 520
 function drawBowlLabel(f: CanvasRenderingContext2D, text: string): void {
   if (!text) return
   const baseSize = 130
-  f.font = `700 ${baseSize}px ${BOWL_FONT_STACK}`
+  // 两套字体都只有常规字重，写 700 会让浏览器合成加粗、笔画变粗
+  f.font = `400 ${baseSize}px ${BOWL_FONT_STACK}`
   const measured = f.measureText(text).width
   const size =
     measured > BOWL_TEXT_MAX_WIDTH
       ? Math.max(36, Math.floor((baseSize * BOWL_TEXT_MAX_WIDTH) / measured))
       : baseSize
-  f.font = `700 ${size}px ${BOWL_FONT_STACK}`
+  f.font = `400 ${size}px ${BOWL_FONT_STACK}`
   f.globalAlpha = 0.85
   f.fillStyle = '#5a4a26'
   f.textAlign = 'center'
