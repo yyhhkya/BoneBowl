@@ -32,6 +32,37 @@ function makeCanvas(width: number, height: number): { canvas: HTMLCanvasElement;
   return { canvas, ctx }
 }
 
+/** 按不透明像素裁剪画布并转成贴图；整张全透明时返回 null */
+function trimCanvas(canvas: HTMLCanvasElement): Texture | null {
+  const w = canvas.width
+  const h = canvas.height
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return null
+  const data = ctx.getImageData(0, 0, w, h).data
+  let minX = w
+  let minY = h
+  let maxX = -1
+  let maxY = -1
+  for (let i = 3; i < data.length; i += 4) {
+    if (data[i] > 8) {
+      const pixel = (i - 3) / 4
+      const x = pixel % w
+      const y = (pixel / w) | 0
+      if (x < minX) minX = x
+      if (x > maxX) maxX = x
+      if (y < minY) minY = y
+      if (y > maxY) maxY = y
+    }
+  }
+  if (maxX < 0) return null
+
+  const width = maxX - minX + 1
+  const height = maxY - minY + 1
+  const out = makeCanvas(width, height)
+  out.ctx.drawImage(canvas, minX, minY, width, height, 0, 0, width, height)
+  return Texture.from(out.canvas)
+}
+
 /** 把 emoji 字形画成贴图，再按不透明像素裁剪到内容边界 */
 function createEmojiTexture(emoji: string, rotateRad: number, fallback: () => Texture): Texture {
   const SIZE = 768
@@ -42,30 +73,7 @@ function createEmojiTexture(emoji: string, rotateRad: number, fallback: () => Te
   ctx.translate(SIZE / 2, SIZE / 2)
   if (rotateRad) ctx.rotate(rotateRad)
   ctx.fillText(emoji, 0, 0)
-
-  const data = ctx.getImageData(0, 0, SIZE, SIZE).data
-  let minX = SIZE
-  let minY = SIZE
-  let maxX = -1
-  let maxY = -1
-  for (let i = 3; i < data.length; i += 4) {
-    if (data[i] > 8) {
-      const pixel = (i - 3) / 4
-      const x = pixel % SIZE
-      const y = (pixel / SIZE) | 0
-      if (x < minX) minX = x
-      if (x > maxX) maxX = x
-      if (y < minY) minY = y
-      if (y > maxY) maxY = y
-    }
-  }
-  if (maxX < 0) return fallback()
-
-  const width = maxX - minX + 1
-  const height = maxY - minY + 1
-  const out = makeCanvas(width, height)
-  out.ctx.drawImage(canvas, minX, minY, width, height, 0, 0, width, height)
-  return Texture.from(out.canvas)
+  return trimCanvas(canvas) ?? fallback()
 }
 
 /** 系统没有 emoji 字形时退化为矢量骨形，避免叠加层直接报错 */
@@ -101,31 +109,46 @@ export function createBoneTexture(): Texture {
   return createEmojiTexture('🦴', (44.78 * Math.PI) / 180, createFallbackBone)
 }
 
-/** 无 emoji 字形时的备用粑粑：三层棕色椭圆堆叠 */
-function createFallbackPoop(): Texture {
-  const fallback = makeCanvas(240, 220)
-  const g = fallback.ctx
-  g.fillStyle = '#8a5a2b'
+/** 粑粑精灵：矢量绘制的无脸粑粑，三层堆叠加顶部尖 */
+export function createPoopTexture(): Texture {
+  const { canvas, ctx: g } = makeCanvas(240, 232)
+  const body = g.createLinearGradient(0, 30, 0, 216)
+  body.addColorStop(0, '#ab7440')
+  body.addColorStop(0.55, '#8a5a2b')
+  body.addColorStop(1, '#6b4423')
+  g.fillStyle = body
+  g.lineJoin = 'round'
+  g.strokeStyle = 'rgba(80, 48, 18, 0.5)'
+  g.lineWidth = 4
+
   for (const [cy, rx, ry] of [
-    [180, 92, 34],
-    [130, 70, 30],
-    [88, 46, 22]
+    [180, 100, 38],
+    [140, 82, 32],
+    [104, 58, 27]
   ]) {
     g.beginPath()
     g.ellipse(120, cy, rx, ry, 0, 0, Math.PI * 2)
     g.fill()
+    g.stroke()
   }
-  g.beginPath()
-  g.moveTo(120, 26)
-  g.bezierCurveTo(150, 48, 140, 72, 120, 82)
-  g.bezierCurveTo(100, 72, 90, 48, 120, 26)
-  g.fill()
-  return Texture.from(fallback.canvas)
-}
 
-/** 粑粑精灵：系统 💩 字形，正立不旋转 */
-export function createPoopTexture(): Texture {
-  return createEmojiTexture('💩', 0, createFallbackPoop)
+  g.beginPath()
+  g.moveTo(120, 108)
+  g.bezierCurveTo(100, 84, 96, 54, 120, 32)
+  g.bezierCurveTo(144, 54, 140, 84, 120, 108)
+  g.closePath()
+  g.fill()
+  g.stroke()
+
+  const shine = g.createLinearGradient(70, 120, 110, 180)
+  shine.addColorStop(0, 'rgba(255, 236, 200, 0.32)')
+  shine.addColorStop(1, 'rgba(255, 236, 200, 0)')
+  g.fillStyle = shine
+  g.beginPath()
+  g.ellipse(88, 150, 30, 14, -0.25, 0, Math.PI * 2)
+  g.fill()
+
+  return trimCanvas(canvas) ?? Texture.from(canvas)
 }
 
 export interface BowlTextures {
