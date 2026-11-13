@@ -208,10 +208,12 @@ export class BoneScene {
         .setAngvel((Math.random() * 2 - 1) * 4)
         .setCcdEnabled(true)
     )
-    this.world.createCollider(
-      RAPIER.ColliderDesc.capsule(halfHeight, radius).setFriction(0.5).setRestitution(0.12).setDensity(0.9),
-      body
-    )
+    // 骨头用胶囊贴合长条外形；粑粑是圆胖的一坨，用半径等于贴图半宽的圆球
+    const collider =
+      item === 'poop'
+        ? RAPIER.ColliderDesc.ball((halfHeight + radius) * 0.75)
+        : RAPIER.ColliderDesc.capsule(halfHeight, radius)
+    this.world.createCollider(collider.setFriction(0.5).setRestitution(0.12).setDensity(0.9), body)
 
     const texture = item === 'poop' ? this.poopTexture : this.boneTexture
     const sprite = new Sprite(texture)
