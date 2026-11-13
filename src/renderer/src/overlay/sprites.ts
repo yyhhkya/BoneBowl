@@ -1,4 +1,5 @@
 import { Texture } from 'pixi.js'
+import poopUrl from '../assets/poop.png'
 import bowlFontUrl from '../assets/fonts/zhi-mang-xing.ttf?url'
 
 /** 碗壁字：拉丁字形走 Ink Free，中文按字体回退落到志莽行书 */
@@ -141,155 +142,58 @@ function createFallbackPoop(): Texture {
   return Texture.from(fallback.canvas)
 }
 
-/**
- * 抹掉 💩 字形的表情：按眼白和品红找两颗眼睛与嘴的包围盒，
- * 用包围盒上下边缘的颜色纵向填充，再对补丁区域做高斯平滑。
- * 返回 false 表示没找到眼睛（系统缺 emoji 字形）。
- */
-function erasePoopFace(canvas: HTMLCanvasElement): boolean {
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return false
-  const width = canvas.width
-  const height = canvas.height
-  const img = ctx.getImageData(0, 0, width, height)
-  const d = img.data
-  const total = width * height
-
-  const white = new Uint8Array(total)
-  const mouthPx = new Uint8Array(total)
+/** 从四边泛洪去掉图片白底，并把过大的素材缩到 640 像素以内 */
+function preparePoopCanvas(img: HTMLImageElement): HTMLCanvasElement {
+  const source = makeCanvas(img.naturalWidth, img.naturalHeight)
+  source.ctx.drawImage(img, 0, 0)
+  const width = source.canvas.width
+  const height = source.canvas.height
+  const imgData = source.ctx.getImageData(0, 0, width, height)
+  const d = imgData.data
+  const visited = new Uint8Array(width * height)
+  const isWhite = (p: number): boolean =>
+    d[p * 4] >= 234 && d[p * 4 + 1] >= 234 && d[p * 4 + 2] >= 234
+  const stack: number[] = []
+  for (let x = 0; x < width; x += 1) {
+    stack.push(x, (height - 1) * width + x)
+  }
   for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const p = y * width + x
-      const i = p * 4
-      if (d[i + 3] < 200) continue
-      const r = d[i]
-      const g = d[i + 1]
-      const b = d[i + 2]
-      if (Math.min(r, g, b) > 185) white[p] = 1
-      if (g < 48 && r > 110 && b > 85) mouthPx[p] = 1
-    }
+    stack.push(y * width, y * width + width - 1)
   }
-
-  const PAD = 9
-  const FEATHER = 10
-  const rects: [number, number, number, number][] = []
-  const seen = new Uint8Array(total)
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const start = y * width + x
-      if (!white[start] || seen[start]) continue
-      const stack = [start]
-      seen[start] = 1
-      let minX = x
-      let maxX = x
-      let minY = y
-      let maxY = y
-      let area = 0
-      while (stack.length) {
-        const p = stack.pop() as number
-        area += 1
-        const px = p % width
-        const py = (p / width) | 0
-        if (px < minX) minX = px
-        if (px > maxX) maxX = px
-        if (py < minY) minY = py
-        if (py > maxY) maxY = py
-        for (const [dx, dy] of [
-          [1, 0],
-          [-1, 0],
-          [0, 1],
-          [0, -1]
-        ]) {
-          const nx = px + dx
-          const ny = py + dy
-          if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue
-          const q = ny * width + nx
-          if (white[q] && !seen[q]) {
-            seen[q] = 1
-            stack.push(q)
-          }
-        }
-      }
-      if (area > 60) rects.push([minX - PAD, minY - PAD, maxX + PAD, maxY + PAD])
-    }
+  while (stack.length) {
+    const p = stack.pop() as number
+    if (visited[p]) continue
+    visited[p] = 1
+    if (!isWhite(p)) continue
+    d[p * 4 + 3] = 0
+    const x = p % width
+    const y = (p / width) | 0
+    if (x > 0) stack.push(p - 1)
+    if (x < width - 1) stack.push(p + 1)
+    if (y > 0) stack.push(p - width)
+    if (y < height - 1) stack.push(p + width)
   }
+  source.ctx.putImageData(imgData, 0, 0)
 
-  let mMinX = width
-  let mMinY = height
-  let mMaxX = -1
-  let mMaxY = -1
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      if (!mouthPx[y * width + x]) continue
-      if (x < mMinX) mMinX = x
-      if (x > mMaxX) mMaxX = x
-      if (y < mMinY) mMinY = y
-      if (y > mMaxY) mMaxY = y
-    }
-  }
-  if (mMaxX >= 0) rects.push([mMinX - PAD, mMinY - PAD, mMaxX + PAD, mMaxY + PAD])
-  if (rects.length < 2) return false
-
-  const mask = new Uint8Array(total)
-  for (const [x0, y0, x1, y1] of rects) {
-    for (let x = Math.max(0, x0 - FEATHER); x <= Math.min(width - 1, x1 + FEATHER); x += 1) {
-      const iTop = (Math.max(0, y0 - PAD) * width + x) * 4
-      const iBottom = (Math.min(height - 1, y1 + PAD) * width + x) * 4
-      for (let y = Math.max(0, y0 - FEATHER); y <= Math.min(height - 1, y1 + FEATHER); y += 1) {
-        const dist = Math.max(Math.max(x0 - x, 0, x - x1), Math.max(y0 - y, 0, y - y1))
-        if (dist > FEATHER) continue
-        const wgt = Math.min(1, ((FEATHER - dist) / FEATHER) * 1.5)
-        const t = Math.min(1, Math.max(0, (y - y0) / Math.max(1, y1 - y0)))
-        const i = (y * width + x) * 4
-        mask[y * width + x] = Math.max(mask[y * width + x], Math.round(wgt * 255))
-        for (let k = 0; k < 3; k += 1) {
-          const fill = d[iTop + k] * (1 - t) + d[iBottom + k] * t
-          d[i + k] = Math.round(d[i + k] * (1 - wgt) + fill * wgt)
-        }
-      }
-    }
-  }
-
-  // 补丁区域高斯平滑，抹平矩形接缝
-  for (let round = 0; round < 8; round += 1) {
-    const prev = new Uint8ClampedArray(d)
-    for (let y = 1; y < height - 1; y += 1) {
-      for (let x = 1; x < width - 1; x += 1) {
-        const m = mask[y * width + x]
-        if (!m) continue
-        const wgt = m / 255
-        let r = 0
-        let g = 0
-        let b = 0
-        for (let dy = -2; dy <= 2; dy += 1) {
-          for (let dx = -2; dx <= 2; dx += 1) {
-            const i = ((y + dy) * width + (x + dx)) * 4
-            r += prev[i]
-            g += prev[i + 1]
-            b += prev[i + 2]
-          }
-        }
-        const i = (y * width + x) * 4
-        d[i] = Math.round(d[i] * (1 - wgt) + (r / 25) * wgt)
-        d[i + 1] = Math.round(d[i + 1] * (1 - wgt) + (g / 25) * wgt)
-        d[i + 2] = Math.round(d[i + 2] * (1 - wgt) + (b / 25) * wgt)
-      }
-    }
-  }
-
-  ctx.putImageData(img, 0, 0)
-  return true
+  const scale = Math.min(1, 640 / Math.max(width, height))
+  if (scale >= 1) return source.canvas
+  const scaled = makeCanvas(Math.round(width * scale), Math.round(height * scale))
+  scaled.ctx.drawImage(source.canvas, 0, 0, scaled.canvas.width, scaled.canvas.height)
+  return scaled.canvas
 }
 
-/** 粑粑精灵：用系统 💩 字形绘制，再抹掉眼睛和嘴 */
-export function createPoopTexture(): Texture {
-  const SIZE = 768
-  const { canvas, ctx } = makeCanvas(SIZE, SIZE)
-  ctx.font = '520px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif'
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.fillText('💩', SIZE / 2, SIZE / 2)
-  return (erasePoopFace(canvas) ? trimCanvas(canvas) : null) ?? createFallbackPoop()
+/** 粑粑精灵：加载随包的 PNG 素材，去掉白底后裁剪；失败时退回矢量粑粑 */
+export async function createPoopTexture(): Promise<Texture> {
+  try {
+    const img = new Image()
+    img.src = poopUrl
+    await img.decode()
+    const texture = trimCanvas(preparePoopCanvas(img))
+    return texture ?? createFallbackPoop()
+  } catch (error) {
+    console.warn('[overlay] 粑粑素材加载失败，使用矢量兜底', error)
+    return createFallbackPoop()
+  }
 }
 
 export interface BowlTextures {

@@ -122,7 +122,7 @@ export class BoneScene {
     const bowlTextures = createBowlTextures(this.bowlText)
     this.bowlTextures = bowlTextures
     const boneTexture = createBoneTexture()
-    const poopTexture = createPoopTexture()
+    const poopTexture = await createPoopTexture()
 
     const bowlBack = new Sprite(bowlTextures.back)
     bowlBack.anchor.set(0.5)
