@@ -33,8 +33,8 @@ function makeCanvas(width: number, height: number): { canvas: HTMLCanvasElement;
   return { canvas, ctx }
 }
 
-/** 按不透明像素裁剪画布并转成贴图；整张全透明时返回 null */
-function trimCanvas(canvas: HTMLCanvasElement): Texture | null {
+/** 按不透明像素裁剪画布；整张全透明时返回 null */
+function trimToCanvas(canvas: HTMLCanvasElement): HTMLCanvasElement | null {
   const w = canvas.width
   const h = canvas.height
   const ctx = canvas.getContext('2d')
@@ -61,7 +61,62 @@ function trimCanvas(canvas: HTMLCanvasElement): Texture | null {
   const height = maxY - minY + 1
   const out = makeCanvas(width, height)
   out.ctx.drawImage(canvas, minX, minY, width, height, 0, 0, width, height)
-  return Texture.from(out.canvas)
+  return out.canvas
+}
+
+/** 裁剪后转贴图；整张全透明时返回 null */
+function trimCanvas(canvas: HTMLCanvasElement): Texture | null {
+  const trimmed = trimToCanvas(canvas)
+  return trimmed ? Texture.from(trimmed) : null
+}
+
+/**
+ * 沿质心向四周发射射线，取贴图不透明轮廓，返回相对贴图中心的像素点集，
+ * 用于给 Rapier 生成贴合形状的凸包碰撞体。
+ */
+function sampleHull(canvas: HTMLCanvasElement): number[] {
+  const w = canvas.width
+  const h = canvas.height
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })
+  if (!ctx) return []
+  const data = ctx.getImageData(0, 0, w, h).data
+  const opaque = (x: number, y: number): boolean =>
+    x >= 0 && x < w && y >= 0 && y < h && data[(y * w + x) * 4 + 3] > 8
+
+  let sumX = 0
+  let sumY = 0
+  let count = 0
+  for (let y = 0; y < h; y += 2) {
+    for (let x = 0; x < w; x += 2) {
+      if (opaque(x, y)) {
+        sumX += x
+        sumY += y
+        count += 1
+      }
+    }
+  }
+  if (!count) return []
+  const cx = sumX / count
+  const cy = sumY / count
+
+  const points: number[] = []
+  const maxR = Math.hypot(w, h)
+  const step = Math.PI / 24
+  for (let angle = 0; angle < Math.PI * 2; angle += step) {
+    const dx = Math.cos(angle)
+    const dy = Math.sin(angle)
+    let radius = 0
+    for (let dist = 1; dist < maxR; dist += 1) {
+      if (!opaque(Math.round(cx + dx * dist), Math.round(cy + dy * dist))) {
+        radius = dist - 1
+        break
+      }
+    }
+    if (radius > 0) {
+      points.push(cx + dx * radius - w / 2, cy + dy * radius - h / 2)
+    }
+  }
+  return points
 }
 
 /** 把 emoji 字形画成贴图，再按不透明像素裁剪到内容边界 */
@@ -111,7 +166,7 @@ export function createBoneTexture(): Texture {
 }
 
 /** 无 emoji 字形时的备用粑粑：三层棕色椭圆堆叠 + 顶部尖 */
-function createFallbackPoop(): Texture {
+function createFallbackPoopCanvas(): HTMLCanvasElement {
   const fallback = makeCanvas(240, 232)
   const g = fallback.ctx
   const body = g.createLinearGradient(0, 30, 0, 216)
@@ -139,7 +194,7 @@ function createFallbackPoop(): Texture {
   g.closePath()
   g.fill()
   g.stroke()
-  return Texture.from(fallback.canvas)
+  return fallback.canvas
 }
 
 /** 从四边泛洪去掉图片白底，并把过大的素材缩到 640 像素以内 */
@@ -182,18 +237,26 @@ function preparePoopCanvas(img: HTMLImageElement): HTMLCanvasElement {
   return scaled.canvas
 }
 
-/** 粑粑精灵：加载随包的 PNG 素材，去掉白底后裁剪；失败时退回矢量粑粑 */
-export async function createPoopTexture(): Promise<Texture> {
+/** 粑粑贴图与轮廓点集，轮廓用于生成贴合形状的碰撞体 */
+export interface PoopAsset {
+  texture: Texture
+  hull: number[]
+}
+
+/** 粑粑精灵：加载随包的 PNG 素材，去掉白底后裁剪并采样轮廓；失败时退回矢量粑粑 */
+export async function createPoopTexture(): Promise<PoopAsset> {
+  let canvas: HTMLCanvasElement | null = null
   try {
     const img = new Image()
     img.src = poopUrl
     await img.decode()
-    const texture = trimCanvas(preparePoopCanvas(img))
-    return texture ?? createFallbackPoop()
+    canvas = trimToCanvas(preparePoopCanvas(img))
   } catch (error) {
     console.warn('[overlay] 粑粑素材加载失败，使用矢量兜底', error)
-    return createFallbackPoop()
   }
+  if (!canvas) canvas = trimToCanvas(createFallbackPoopCanvas())
+  if (!canvas) canvas = createFallbackPoopCanvas()
+  return { texture: Texture.from(canvas), hull: sampleHull(canvas) }
 }
 
 export interface BowlTextures {

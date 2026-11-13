@@ -30,6 +30,8 @@ interface Bone {
   body: RAPIER.RigidBody
   sprite: Sprite
   shadow: Sprite
+  /** 贴图相对碰撞体局部坐标的旋转修正（骨贴图长轴是水平的） */
+  rotOffset: number
   born: number
 }
 
@@ -122,7 +124,9 @@ export class BoneScene {
     const bowlTextures = createBowlTextures(this.bowlText)
     this.bowlTextures = bowlTextures
     const boneTexture = createBoneTexture()
-    const poopTexture = await createPoopTexture()
+    const poop = await createPoopTexture()
+    const poopTexture = poop.texture
+    this.poopHull = poop.hull
 
     const bowlBack = new Sprite(bowlTextures.back)
     bowlBack.anchor.set(0.5)
@@ -165,6 +169,8 @@ export class BoneScene {
 
   private boneTexture!: import('pixi.js').Texture
   private poopTexture!: import('pixi.js').Texture
+  /** 粑粑轮廓点（贴图像素坐标，相对贴图中心），用来生成凸包碰撞体 */
+  private poopHull: number[] = []
 
   /** 0 表示一直保留，直到达到骨头数量上限 */
   setBoneLifetime(seconds: number): void {
@@ -201,28 +207,43 @@ export class BoneScene {
     const radius = 23 * scale
     const halfHeight = 42 * scale
 
+    const texture = item === 'poop' ? this.poopTexture : this.boneTexture
+    // 骨头按贴图长轴铺满，粑粑按半径放大一些
+    const visibleLength = (halfHeight + radius) * (item === 'poop' ? 1.5 : 2)
+    const spriteScale = visibleLength / texture.width
+    // 骨贴图长轴是水平的，碰撞体胶囊长轴是竖直的；粑粑贴图和凸包同一坐标系
+    const rotOffset = item === 'poop' ? 0 : Math.PI / 2
+    const angle = Math.random() * Math.PI * 2
+
     const body = this.world.createRigidBody(
       RAPIER.RigidBodyDesc.dynamic()
         .setTranslation(x, 80)
+        .setRotation(angle)
         .setLinvel((Math.random() * 2 - 1) * 150, 0)
         .setAngvel((Math.random() * 2 - 1) * 4)
         .setCcdEnabled(true)
     )
-    // 骨头用胶囊贴合长条外形；粑粑是圆胖的一坨，用半径等于贴图半宽的圆球
-    const collider =
-      item === 'poop'
-        ? RAPIER.ColliderDesc.ball((halfHeight + radius) * 0.75)
-        : RAPIER.ColliderDesc.capsule(halfHeight, radius)
+
+    // 骨头用胶囊；粑粑按贴图轮廓生成凸包，拿到不合法结果时退回圆球
+    let collider: RAPIER.ColliderDesc | null = null
+    if (item === 'poop' && this.poopHull.length >= 6) {
+      const points = new Float32Array(this.poopHull.length)
+      for (let i = 0; i < points.length; i += 1) points[i] = this.poopHull[i] * spriteScale
+      collider = RAPIER.ColliderDesc.convexHull(points)
+    }
+    if (!collider) {
+      collider =
+        item === 'poop'
+          ? RAPIER.ColliderDesc.ball((halfHeight + radius) * 0.75)
+          : RAPIER.ColliderDesc.capsule(halfHeight, radius)
+    }
     this.world.createCollider(collider.setFriction(0.5).setRestitution(0.12).setDensity(0.9), body)
 
-    const texture = item === 'poop' ? this.poopTexture : this.boneTexture
     const sprite = new Sprite(texture)
     sprite.anchor.set(0.5)
-    // 骨头按碰撞体长轴铺满，粑粑是方脸，宽度按半径放大一些
-    const visibleLength = (halfHeight + radius) * (item === 'poop' ? 1.5 : 2)
-    sprite.scale.set(visibleLength / texture.width)
+    sprite.scale.set(spriteScale)
     sprite.position.set(x, 80)
-    sprite.rotation = Math.random() * Math.PI
+    sprite.rotation = angle + rotOffset
 
     const shadow = new Sprite(texture)
     shadow.anchor.set(0.5)
@@ -234,7 +255,7 @@ export class BoneScene {
 
     this.boneLayer.addChild(shadow)
     this.boneLayer.addChild(sprite)
-    this.bones.push({ body, sprite, shadow, born: now })
+    this.bones.push({ body, sprite, shadow, rotOffset, born: now })
 
     if (this.bones.length > MAX_BONES) {
       this.removeBoneAt(0)
@@ -295,7 +316,7 @@ export class BoneScene {
       }
 
       bone.sprite.position.set(position.x, position.y)
-      bone.sprite.rotation = rotation + Math.PI / 2
+      bone.sprite.rotation = rotation + bone.rotOffset
       bone.shadow.position.set(position.x + 5, position.y + 7)
       bone.shadow.rotation = bone.sprite.rotation
     }
