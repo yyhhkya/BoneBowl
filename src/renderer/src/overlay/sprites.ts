@@ -1,4 +1,5 @@
 import { Texture } from 'pixi.js'
+import type { BowlColor } from '../../../shared/types'
 import poopUrl from '../assets/poop.png'
 import bowlFontUrl from '../assets/fonts/zhi-mang-xing.ttf?url'
 
@@ -293,8 +294,85 @@ function drawBowlLabel(f: CanvasRenderingContext2D, text: string): void {
   f.globalAlpha = 1
 }
 
+interface BowlPalette {
+  shadow: string
+  bodyTop: string
+  bodyMid: string
+  bodyBottom: string
+  bodyStroke: string
+  sideShadeEdge: string
+  sideShadeMid: string
+  gloss: string
+  cavityTop: string
+  cavityMid: string
+  cavityBottom: string
+  cavityStroke: string
+  innerShade: string
+  rim0: string
+  rim1: string
+  rim2: string
+  rim3: string
+  rimStroke: string
+  rimInner: string
+  wallTop: string
+  frontHoleShade: string
+  frontStroke: string
+}
+
+const BOWL_PALETTES: Record<BowlColor, BowlPalette> = {
+  yellow: {
+    shadow: 'rgba(28, 20, 10, 0.26)',
+    bodyTop: '#fff6d8',
+    bodyMid: '#ffe7a6',
+    bodyBottom: '#f0cd70',
+    bodyStroke: 'rgba(190, 150, 60, 0.85)',
+    sideShadeEdge: 'rgba(190, 150, 60, 0.2)',
+    sideShadeMid: 'rgba(140, 100, 30, 0)',
+    gloss: 'rgba(255, 252, 232, 0.42)',
+    cavityTop: '#e2bb62',
+    cavityMid: '#cfa345',
+    cavityBottom: '#a97d28',
+    cavityStroke: 'rgba(140, 100, 30, 0.5)',
+    innerShade: 'rgba(140, 100, 20, 0.15)',
+    rim0: '#f6e3ae',
+    rim1: '#fffbef',
+    rim2: '#fbeec6',
+    rim3: '#ecd189',
+    rimStroke: 'rgba(190, 150, 60, 0.7)',
+    rimInner: '#e5c871',
+    wallTop: '#fff8de',
+    frontHoleShade: 'rgba(150, 110, 30, 0.07)',
+    frontStroke: 'rgba(190, 150, 60, 0.5)'
+  },
+  white: {
+    shadow: 'rgba(24, 24, 24, 0.22)',
+    bodyTop: '#ffffff',
+    bodyMid: '#f1f1ee',
+    bodyBottom: '#d9d9d4',
+    bodyStroke: 'rgba(150, 150, 142, 0.85)',
+    sideShadeEdge: 'rgba(150, 150, 142, 0.18)',
+    sideShadeMid: 'rgba(120, 120, 110, 0)',
+    gloss: 'rgba(255, 255, 255, 0.55)',
+    cavityTop: '#f4f4f1',
+    cavityMid: '#dededa',
+    cavityBottom: '#b9b9b3',
+    cavityStroke: 'rgba(140, 140, 132, 0.5)',
+    innerShade: 'rgba(120, 120, 110, 0.15)',
+    rim0: '#ececea',
+    rim1: '#ffffff',
+    rim2: '#f5f5f2',
+    rim3: '#d5d5cf',
+    rimStroke: 'rgba(150, 150, 142, 0.7)',
+    rimInner: '#e4e4df',
+    wallTop: '#ffffff',
+    frontHoleShade: 'rgba(120, 120, 110, 0.07)',
+    frontStroke: 'rgba(150, 150, 142, 0.5)'
+  }
+}
+
 /** 碗：剖视风格，主体与碗口分两层，中间夹骨头 */
-export function createBowlTextures(bowlText = ''): BowlTextures {
+export function createBowlTextures(bowlText = '', color: BowlColor = 'yellow'): BowlTextures {
+  const palette = BOWL_PALETTES[color]
   const width = 720
   const height = 380
   const pixelRatio = BOWL_PIXEL_RATIO
@@ -305,7 +383,7 @@ export function createBowlTextures(bowlText = ''): BowlTextures {
 
   b.save()
   b.filter = 'blur(28px)'
-  b.fillStyle = 'rgba(28, 20, 10, 0.26)'
+  b.fillStyle = palette.shadow
   b.beginPath()
   b.ellipse(360, 348, 276, 20, 0, 0, Math.PI * 2)
   b.fill()
@@ -317,28 +395,28 @@ export function createBowlTextures(bowlText = ''): BowlTextures {
   bodyPath.bezierCurveTo(542, 356, 656, 286, 664, 78)
   bodyPath.closePath()
   const bodyGradient = b.createLinearGradient(0, 70, 0, 356)
-  bodyGradient.addColorStop(0, '#fff6d8')
-  bodyGradient.addColorStop(0.55, '#ffe7a6')
-  bodyGradient.addColorStop(1, '#f0cd70')
+  bodyGradient.addColorStop(0, palette.bodyTop)
+  bodyGradient.addColorStop(0.55, palette.bodyMid)
+  bodyGradient.addColorStop(1, palette.bodyBottom)
   b.fillStyle = bodyGradient
   b.fill(bodyPath)
-  b.strokeStyle = 'rgba(190, 150, 60, 0.85)'
+  b.strokeStyle = palette.bodyStroke
   b.lineWidth = 3
   b.stroke(bodyPath)
 
   b.save()
   b.clip(bodyPath)
   const sideShade = b.createLinearGradient(56, 0, 664, 0)
-  sideShade.addColorStop(0, 'rgba(190, 150, 60, 0.2)')
-  sideShade.addColorStop(0.2, 'rgba(140, 100, 30, 0)')
-  sideShade.addColorStop(0.78, 'rgba(140, 100, 30, 0)')
-  sideShade.addColorStop(1, 'rgba(190, 150, 60, 0.22)')
+  sideShade.addColorStop(0, palette.sideShadeEdge)
+  sideShade.addColorStop(0.2, palette.sideShadeMid)
+  sideShade.addColorStop(0.78, palette.sideShadeMid)
+  sideShade.addColorStop(1, palette.sideShadeEdge)
   b.fillStyle = sideShade
   b.fillRect(40, 60, 640, 310)
 
   const gloss = b.createRadialGradient(270, 230, 8, 270, 230, 220)
-  gloss.addColorStop(0, 'rgba(255, 252, 232, 0.42)')
-  gloss.addColorStop(1, 'rgba(255, 252, 232, 0)')
+  gloss.addColorStop(0, palette.gloss)
+  gloss.addColorStop(1, 'rgba(255, 255, 255, 0)')
   b.fillStyle = gloss
   b.fillRect(100, 100, 400, 260)
   b.restore()
@@ -349,42 +427,42 @@ export function createBowlTextures(bowlText = ''): BowlTextures {
   cavityPath.bezierCurveTo(524, 322, 610, 258, 616, 88)
   cavityPath.closePath()
   const cavityGradient = b.createLinearGradient(0, 86, 0, 322)
-  cavityGradient.addColorStop(0, '#e2bb62')
-  cavityGradient.addColorStop(0.45, '#cfa345')
-  cavityGradient.addColorStop(1, '#a97d28')
+  cavityGradient.addColorStop(0, palette.cavityTop)
+  cavityGradient.addColorStop(0.45, palette.cavityMid)
+  cavityGradient.addColorStop(1, palette.cavityBottom)
   b.fillStyle = cavityGradient
   b.fill(cavityPath)
-  b.strokeStyle = 'rgba(140, 100, 30, 0.5)'
+  b.strokeStyle = palette.cavityStroke
   b.lineWidth = 2
   b.stroke(cavityPath)
 
   b.save()
   b.clip(cavityPath)
   const innerShade = b.createLinearGradient(0, 86, 0, 200)
-  innerShade.addColorStop(0, 'rgba(140, 100, 20, 0.15)')
+  innerShade.addColorStop(0, palette.innerShade)
   innerShade.addColorStop(1, 'rgba(90, 60, 10, 0)')
   b.fillStyle = innerShade
   b.fillRect(90, 80, 540, 140)
   b.restore()
 
   const rimGradient = b.createLinearGradient(56, 0, 664, 0)
-  rimGradient.addColorStop(0, '#f6e3ae')
-  rimGradient.addColorStop(0.28, '#fffbef')
-  rimGradient.addColorStop(0.55, '#fbeec6')
-  rimGradient.addColorStop(1, '#ecd189')
+  rimGradient.addColorStop(0, palette.rim0)
+  rimGradient.addColorStop(0.28, palette.rim1)
+  rimGradient.addColorStop(0.55, palette.rim2)
+  rimGradient.addColorStop(1, palette.rim3)
   b.strokeStyle = rimGradient
   b.lineWidth = 24
   b.beginPath()
   b.ellipse(360, 82, 304, 34, 0, 0, Math.PI * 2)
   b.stroke()
 
-  b.strokeStyle = 'rgba(190, 150, 60, 0.7)'
+  b.strokeStyle = palette.rimStroke
   b.lineWidth = 3
   b.beginPath()
   b.ellipse(360, 82, 316, 40, 0, 0, Math.PI * 2)
   b.stroke()
 
-  b.fillStyle = '#e5c871'
+  b.fillStyle = palette.rimInner
   b.beginPath()
   b.ellipse(360, 82, 256, 22, 0, 0, Math.PI * 2)
   b.fill()
@@ -401,23 +479,23 @@ export function createBowlTextures(bowlText = ''): BowlTextures {
   wall.ellipse(360, 82, 304, 34, 0, 0, Math.PI)
   wall.closePath()
   const wallGradient = f.createLinearGradient(0, 78, 0, 356)
-  wallGradient.addColorStop(0, '#fff8de')
-  wallGradient.addColorStop(0.55, '#ffe7a6')
-  wallGradient.addColorStop(1, '#f0cd70')
+  wallGradient.addColorStop(0, palette.wallTop)
+  wallGradient.addColorStop(0.55, palette.bodyMid)
+  wallGradient.addColorStop(1, palette.bodyBottom)
   f.globalAlpha = 0.58
   f.fillStyle = wallGradient
   f.fill(wall)
-  f.strokeStyle = 'rgba(190, 150, 60, 0.85)'
+  f.strokeStyle = palette.bodyStroke
   f.lineWidth = 3
   f.stroke(wall)
 
   f.save()
   f.clip(wall)
   const wallSide = f.createLinearGradient(56, 0, 664, 0)
-  wallSide.addColorStop(0, 'rgba(190, 150, 60, 0.22)')
-  wallSide.addColorStop(0.2, 'rgba(140, 100, 30, 0)')
-  wallSide.addColorStop(0.78, 'rgba(140, 100, 30, 0)')
-  wallSide.addColorStop(1, 'rgba(140, 100, 30, 0.3)')
+  wallSide.addColorStop(0, palette.sideShadeEdge)
+  wallSide.addColorStop(0.2, palette.sideShadeMid)
+  wallSide.addColorStop(0.78, palette.sideShadeMid)
+  wallSide.addColorStop(1, palette.sideShadeEdge)
   f.fillStyle = wallSide
   f.fillRect(40, 60, 640, 310)
   f.restore()
@@ -428,7 +506,7 @@ export function createBowlTextures(bowlText = ''): BowlTextures {
 
   f.lineCap = 'round'
 
-  f.strokeStyle = 'rgba(150, 110, 30, 0.07)'
+  f.strokeStyle = palette.frontHoleShade
   f.lineWidth = 8
   f.beginPath()
   f.ellipse(360, 92, 258, 22, 0, -0.02, Math.PI + 0.02)
@@ -436,17 +514,17 @@ export function createBowlTextures(bowlText = ''): BowlTextures {
 
   // 前缘和背景碗沿用同一组颜色，圆头端点略微越界，避免半圈收尾处出现断色
   const frontRim = f.createLinearGradient(56, 0, 664, 0)
-  frontRim.addColorStop(0, '#f6e3ae')
-  frontRim.addColorStop(0.28, '#fffbef')
-  frontRim.addColorStop(0.55, '#fbeec6')
-  frontRim.addColorStop(1, '#ecd189')
+  frontRim.addColorStop(0, palette.rim0)
+  frontRim.addColorStop(0.28, palette.rim1)
+  frontRim.addColorStop(0.55, palette.rim2)
+  frontRim.addColorStop(1, palette.rim3)
   f.strokeStyle = frontRim
   f.lineWidth = 24
   f.beginPath()
   f.ellipse(360, 82, 304, 34, 0, -0.03, Math.PI + 0.03)
   f.stroke()
 
-  f.strokeStyle = 'rgba(190, 150, 60, 0.5)'
+  f.strokeStyle = palette.frontStroke
   f.lineWidth = 3.5
   f.beginPath()
   f.ellipse(360, 95, 300, 32, 0, -0.02, Math.PI + 0.02)

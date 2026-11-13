@@ -1,6 +1,9 @@
 /** 礼物掉落物：骨头或粑粑 */
 export type DropItem = 'bone' | 'poop'
 
+/** 碗配色：yellow 黄陶碗，white 马桶白瓷 */
+export type BowlColor = 'yellow' | 'white'
+
 export interface GiftRule {
   id: string
   giftId: number
@@ -23,6 +26,8 @@ export interface AppConfig {
   boneLifetimeSec: number
   /** 碗壁文字，留空则不显示；英文用 Ink Free，中文用志莽行书 */
   bowlText: string
+  /** 碗颜色，只换配色不改形状 */
+  bowlColor: BowlColor
   gifts: GiftRule[]
 }
 
@@ -126,5 +131,6 @@ export const DEFAULT_CONFIG: AppConfig = {
   port: 17800,
   boneLifetimeSec: 0,
   bowlText: 'FA',
+  bowlColor: 'yellow',
   gifts: []
 }

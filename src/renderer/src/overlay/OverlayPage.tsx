@@ -77,7 +77,7 @@ export function OverlayPage(): React.JSX.Element {
           const payload = JSON.parse(String(event.data)) as {
             type?: string
             gift?: GiftEvent
-            config?: { boneLifetimeSec?: number; bowlText?: string }
+            config?: { boneLifetimeSec?: number; bowlText?: string; bowlColor?: 'yellow' | 'white' }
           }
           if (payload.type === 'gift' && payload.gift) handleGift(payload.gift)
           if (payload.type === 'config') {
@@ -86,6 +86,9 @@ export function OverlayPage(): React.JSX.Element {
             }
             if (typeof payload.config?.bowlText === 'string') {
               scene.setBowlText(payload.config.bowlText)
+            }
+            if (payload.config?.bowlColor === 'yellow' || payload.config?.bowlColor === 'white') {
+              scene.setBowlColor(payload.config.bowlColor)
             }
           }
         } catch {

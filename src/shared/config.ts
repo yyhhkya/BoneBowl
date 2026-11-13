@@ -40,6 +40,7 @@ export function normalizeConfig(raw: Partial<AppConfig>): AppConfig {
       typeof raw.bowlText === 'string'
         ? raw.bowlText.replace(/\s+/g, ' ').trim().slice(0, 24)
         : DEFAULT_CONFIG.bowlText,
+    bowlColor: raw.bowlColor === 'white' ? 'white' : 'yellow',
     gifts: Array.isArray(raw.gifts)
       ? raw.gifts
           .filter((g): g is AppConfig['gifts'][number] => !!g && typeof g.giftId === 'number')

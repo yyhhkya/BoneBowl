@@ -1,6 +1,6 @@
 import { Application, Container, Sprite, type Ticker } from 'pixi.js'
 import RAPIER from '@dimforge/rapier2d-compat'
-import { DEFAULT_CONFIG, type DropItem, type GiftEvent } from '../../../shared/types'
+import { DEFAULT_CONFIG, type BowlColor, type DropItem, type GiftEvent } from '../../../shared/types'
 import {
   createBoneTexture,
   createBowlTextures,
@@ -96,6 +96,7 @@ export class BoneScene {
   private lastHeight = 0
   private disposed = false
   private bowlText: string = DEFAULT_CONFIG.bowlText
+  private bowlColor: BowlColor = DEFAULT_CONFIG.bowlColor
   private bowlTextures: BowlTextures | null = null
   private bowlBackSprite: Sprite | null = null
   private bowlFrontSprite: Sprite | null = null
@@ -121,7 +122,7 @@ export class BoneScene {
 
     this.app.stage.addChild(this.root)
 
-    const bowlTextures = createBowlTextures(this.bowlText)
+    const bowlTextures = createBowlTextures(this.bowlText, this.bowlColor)
     this.bowlTextures = bowlTextures
     const boneTexture = createBoneTexture()
     const poop = await createPoopTexture()
@@ -182,9 +183,20 @@ export class BoneScene {
     const next = text.trim()
     if (next === this.bowlText) return
     this.bowlText = next
+    this.rebuildBowl()
+  }
+
+  /** 碗配色：形状不动，只按新配色重绘贴图 */
+  setBowlColor(color: BowlColor): void {
+    if (color === this.bowlColor) return
+    this.bowlColor = color
+    this.rebuildBowl()
+  }
+
+  private rebuildBowl(): void {
     if (!this.bowlFrontSprite || !this.bowlBackSprite) return
     const previous = this.bowlTextures
-    const textures = createBowlTextures(next)
+    const textures = createBowlTextures(this.bowlText, this.bowlColor)
     this.bowlTextures = textures
     this.bowlBackSprite.texture = textures.back
     this.bowlFrontSprite.texture = textures.front

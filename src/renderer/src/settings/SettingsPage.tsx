@@ -36,6 +36,7 @@ import {
   Grain,
   MicroLabel,
   SectionHeading,
+  Segmented,
   StatusPill,
   Toggle
 } from './ui'
@@ -1013,6 +1014,23 @@ export function SettingsPage(): React.JSX.Element {
                       scheduleSave({ bowlText })
                     }}
                   />
+                </Field>
+
+                <Field label="碗颜色" hint="只换配色，碗的大小和碰撞体不变。">
+                  <div className="max-w-[280px]">
+                    <Segmented
+                      value={config.bowlColor}
+                      options={[
+                        { value: 'yellow', label: '黄' },
+                        { value: 'white', label: '白' }
+                      ]}
+                      onChange={(bowlColor) => {
+                        setConfig((prev) => (prev ? { ...prev, bowlColor } : prev))
+                        scheduleSave({ bowlColor })
+                      }}
+                      layoutId="bowl-color"
+                    />
+                  </div>
                 </Field>
               </div>
 
